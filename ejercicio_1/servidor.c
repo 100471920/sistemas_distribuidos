@@ -15,14 +15,14 @@ pthread_cond_t cond_mensaje;
 mqd_t  q_servidor;
 
 void tratar_mensaje(void  *mess) {
-    struct peticion mensaje;    /* mensaje local */
+    struct mensaje mensaje;    /* mensaje local */
     mqd_t q_cliente;        /* cola del cliente */
     int resultado;        /* resultado de la operación */
 
     /* el thread copia el mensaje a un mensaje local */
     pthread_mutex_lock(&mutex_mensaje);
 
-    mensaje = (*(struct peticion *) mess);
+    mensaje = (*(struct mensaje *) mess);
 
     // Una vez copiado el mensaje, se reanuda el hilo padre
     mensaje_no_copiado = false;
@@ -58,7 +58,7 @@ int main(){
 
     // Se crean los hilos de forma independiente
     pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
-
+/*
     while(1) {
 
         if (mq_receive(q_servidor, (char *) &mensaje, sizeof(mensaje), 0) < 0 ){
@@ -74,9 +74,9 @@ int main(){
             pthread_mutex_unlock(&mutex_mensaje);
         }
     }
-
+*/
     mq_close(q_servidor);
-    mq_unlink("/SERVIDOR");
+    mq_unlink("/SERVIDOR"); // De momento comentar esta linea para que se quede abierta la cola
 
 
 }
