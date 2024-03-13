@@ -7,29 +7,25 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "mensaje.h"
+#include "claves.h"
 
-int main(){
-    mqd_t q_servidor;
-    mqd_t q_cliente;
-    struct mensaje mensaje;
-    struct mq_attr attr;
-    char queuename[100];
+char queuename[100];
 
-    attr.mq_maxmsg = 1;
-    attr.mq_msgsize = sizeof(int);
+int main() {
+    printf("Return de claves init: %d\n", init());
+    printf("Self PID = %d\n", getpid());
+    char peticion;
 
-    sprintf(queuename, "/Cola-%d", getpid());
-    printf("Cola Cliente: %s\n", queuename);
-    q_cliente = mq_open(queuename, O_CREAT|O_RDONLY, 0700, &attr);
-    if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente");
-
+    while(1) {
+        printf("Indique la operación a realizar: ");
+        scanf(" %c", &peticion); // Note the space before %c to consume whitespace characters
+        if (peticion == 'i') {
+            init();
+        } else {
+            exit_f();
+            return -1;
+        }
     }
-    q_servidor = mq_open("/SERVIDOR", O_WRONLY);
-    if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor");
-    }
-    mq_close(q_servidor);
-    mq_close(q_cliente);
-    mq_unlink(queuename);
+
+    return 0;
 }

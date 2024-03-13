@@ -1,0 +1,13 @@
+
+COMPILAR LA LIBRERÍA
+gcc -c -Wall -Werror -fpic claves.c
+gcc -shared -o libclaves.so claves.o
+
+COMPILAR EL CLIENTE CON LA LIBRERÍA
+gcc -Wall -o cliente cliente.c -L. -lclaves
+
+SOLO SI ES NECESARIO/DA ERROR:
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+
+COMPILAR EL SERVIDOR:
+gcc -o servidor servidor.c

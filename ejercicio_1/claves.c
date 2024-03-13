@@ -1,7 +1,101 @@
 //
 // Created by rubenubuntu on 28/02/24.
 //
+#include <mqueue.h>
+#include <string.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "mensaje.h"
+
+
 
 int init(){
-    /* Destruir todas las tuplas creadas */
+    mqd_t q_servidor;       /* cola de mensajes del proceso servidor */
+    mqd_t q_cliente;        /* cola de mensajes para el proceso cliente */
+    char queue_name[100];
+    sprintf(queue_name, "/Cola-%d", getpid());
+    struct mensaje mess;
+    struct mq_attr attr;
+    int res;
+
+    attr.mq_maxmsg = 1;
+    attr.mq_msgsize = sizeof(int);
+
+    q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
+    if (q_cliente == -1){
+        perror("Error al abrir la cola del cliente");
+    }
+    q_servidor = mq_open("/SERVIDOR", O_WRONLY);
+    if (q_servidor == -1){
+        perror("Error al abrir la cola del servidor");
+    }
+
+    mess.op = 0;
+    strcpy(mess.cola_cliente, queue_name);
+    for(int i = 0; i < 32; i++){mess.valor_2.vector[i] = 0.0;}
+
+    mess.valor_2.n_elem = 0;
+
+    strcpy(mess.valor_1, "asd");
+
+
+    if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
+        perror("mq_send");
+        return -1;
+    }
+
+
+    if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
+        perror("mq_recv");
+        return -1;
+    }
+
+    mq_close(q_servidor);
+    mq_close(q_cliente);
+    mq_unlink(queue_name);
+
+
+    printf("Queue_Name = %s\n", queue_name);
+    return res;
+}
+
+
+void exit_f(){
+    mqd_t q_servidor;       /* cola de mensajes del proceso servidor */
+    mqd_t q_cliente;        /* cola de mensajes para el proceso cliente */
+    char queue_name[100];
+    sprintf(queue_name, "/Cola-%d", getpid());
+    struct mensaje mess;
+    struct mq_attr attr;
+
+    attr.mq_maxmsg = 1;
+    attr.mq_msgsize = sizeof(int);
+
+    q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
+    if (q_cliente == -1){
+        perror("Error al abrir la cola del cliente");
+    }
+    q_servidor = mq_open("/SERVIDOR", O_WRONLY);
+    if (q_servidor == -1){
+        perror("Error al abrir la cola del servidor");
+    }
+
+    mess.op = -1;
+    strcpy(mess.cola_cliente, queue_name);
+    for(int i = 0; i < 32; i++){mess.valor_2.vector[i] = 0.0;}
+
+    mess.valor_2.n_elem = 0;
+
+    strcpy(mess.valor_1, "a");
+
+
+    mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0);
+
+    mq_close(q_servidor);
+    mq_close(q_cliente);
+    mq_unlink(queue_name);
+
+
+    printf("Queue_Name = %s\n", queue_name);
 }

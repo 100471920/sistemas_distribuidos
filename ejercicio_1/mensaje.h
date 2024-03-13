@@ -8,7 +8,7 @@
 
 struct valor_2{
     int n_elem;
-    double *vector;
+    double vector[32];
 };
 
 struct mensaje{

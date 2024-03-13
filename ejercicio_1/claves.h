@@ -100,7 +100,9 @@ int delete_key(int key);
  */
 int exist(int key);
 
-#endif
+
+int exit_f();
+#endif // CLAVES_H
 
 
 
