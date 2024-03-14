@@ -6,17 +6,20 @@
 #define DISTRIBUIDOS_MENSAJE_H
 #define MAXSIZE	256 // 255 caracteres + \0
 
-struct valor_2{
-    int n_elem;
-    double vector[32];
-};
-
 struct mensaje{
     int op;
     char cola_cliente[100];
     int clave;
     char valor_1[MAXSIZE];
-    struct valor_2 valor_2;
+    int n_elem;
+    double vector[32];
+};
+
+struct database{
+    int clave;
+    char *valor_1;
+    int n_elem;
+    double *vector;
 };
 
 #endif //DISTRIBUIDOS_MENSAJE_H

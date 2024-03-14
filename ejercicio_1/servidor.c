@@ -7,7 +7,16 @@
 #include <stdbool.h>
 #include <string.h>
 #include "mensaje.h"
+#include <stdlib.h>
 
+
+int *keys;
+char **valores_1;
+int* num_elements;
+double **vectores;
+int num_data = 0;
+
+int num_data = 0; // Numero de elementos almacenados
 
 pthread_mutex_t mutex_mensaje;
 int mensaje_no_copiado = 1;
@@ -32,7 +41,7 @@ void tratar_mensaje(void  *mess) {
 
     pthread_mutex_unlock(&mutex_mensaje);
 
-    /* ejecutar la petición del cliente y preparar respuesta */
+    /* ejecutar la petición del  y preparar respuesta */
     printf("Mensaje copiado\n");
     q_cliente = mq_open(mensaje.cola_cliente, O_WRONLY);
     if (mensaje.op == 0){
@@ -42,6 +51,85 @@ void tratar_mensaje(void  *mess) {
             pthread_exit(0);
         }
     }
+    else if (mensaje.op == 1){
+        // Funcion delete_key
+        resultado = 100;
+        if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
+            pthread_exit(0);
+        }
+    }
+
+    else if (mensaje.op == 2){
+        // set_value
+        num_data++;
+        int *temp_keys = realloc(keys, num_data * sizeof(int));
+        int *temp_num_elements = realloc(num_elements, num_data * sizeof(int));
+        char **temp_valores_1 = realloc(temp_valores_1, num_data * sizeof(char*));
+        double **tempo_vectores = realloc(vectores, num_data * sizeof(double*))
+        if (temp_keys == NULL) {
+            printf("Memory allocation failed\n");
+            resultado = -1;
+            break;
+        }
+        if (temp_num_elements == NULL) {
+            printf("Memory allocation failed\n");
+            resultado = -1;
+            break;
+        }
+        if (temp_valores_1 == NULL) {
+            printf("Memory allocation failed\n");
+            resultado = -1;
+            break;
+        }
+        if (tempo_vectores == NULL) {
+            printf("Memory allocation failed\n");
+            resultado = -1;
+            break;
+        }
+        // Hacemos la capacidad de la base de datos más grande
+        keys = temp_keys;
+        valores_1 = temp_valores_1;
+        num_elements = temp_num_elements;
+        vectores = tempo_vectores;
+
+        // Asignamos los valores al nuevo elemento de la base de datos
+        keys[num_data - 1] = mensaje.clave;
+        num_elements[num_data - 1] = mensaje.n_elem;
+        valores_1[num_data - 1] = (char *)malloc((sizeof(mensaje.valor_1) + 1) * sizeof(char));
+        strcpy(valores_1[num_data - 1], mensaje.valor_1);
+        vectores[num_data - 1] = (double *)malloc((mensaje.n_elem) * sizeof(double));
+        for (int i = 0; i < mensaje.n_elem; i++){
+            vectores[num_data - 1][i] = mensaje.vector[i];
+        }
+        printf("mensaje.key = %d, copy_key = %d\n", mensaje.clave, keys[num_data - 1]);
+        printf("num_elements = %d, copy = %d\n", mensaje.n_elem, num_elements[num_data - 1]);
+        printf("valor_1 = %s, copy = %s\n", mensaje.valor_1, valores_1[num_data - 1]);
+        for(int i = 0; i)
+    }
+    else if (mensaje.op == 3){
+        // Funcion get_values
+
+        // Buscar valores en data
+        for(int i = 0; i < sizeof(keys); i++)
+        {
+            if(key[i] == mensaje.clave)
+            {
+
+            }
+        }
+
+        //Si se ecuentra
+        if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
+            pthread_exit(0);
+        }
+        // devolvel error no exiten
+    }
+
+
+
+
+
+
     mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0);
     pthread_exit(0);
 
