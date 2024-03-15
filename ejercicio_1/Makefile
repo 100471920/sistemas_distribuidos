@@ -1,27 +1,21 @@
 CC = gcc
-CFLAGS = -Wall -Werror
-LDFLAGS = -L.
-LIBS = -lclaves
+CFLAGS = -Wall -Werror -fPIC
+LDFLAGS = -L. -lclaves
 
-all: cliente servidor libclaves.so
-
-cliente: cliente.o libclaves.so
-	$(CC) $(CFLAGS) -o $@ cliente.o $(LDFLAGS) $(LIBS)
+all: servidor cliente
 
 servidor: servidor.o libclaves.so
-	$(CC) $(CFLAGS) -o $@ servidor.o $(LDFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ servidor.o $(LDFLAGS)
 
-cliente.o: cliente.c
+cliente: cliente.o libclaves.so
+	$(CC) $(CFLAGS) -o $@ cliente.o $(LDFLAGS) -Wl,-rpath,.
+
+libclaves.so: claves.c
+	$(CC) $(CFLAGS) -shared -o $@ $^
+
+%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-servidor.o: servidor.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-libclaves.so: claves.o
-	$(CC) $(CFLAGS) -shared -o $@ $<
-
-claves.o: claves.c
-	$(CC) $(CFLAGS) -c -fPIC -o $@ $<
 
 clean:
-	rm -f cliente cliente.o servidor servidor.o libclaves.so claves.o
+	rm -f *.o *.so servidor cliente
+

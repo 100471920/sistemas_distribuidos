@@ -14,8 +14,6 @@ int *keys;
 char **valores_1;
 int* num_elements;
 double **vectores;
-int num_data = 0;
-
 int num_data = 0; // Numero de elementos almacenados
 
 pthread_mutex_t mutex_mensaje;
@@ -64,27 +62,36 @@ void tratar_mensaje(void  *mess) {
         num_data++;
         int *temp_keys = realloc(keys, num_data * sizeof(int));
         int *temp_num_elements = realloc(num_elements, num_data * sizeof(int));
-        char **temp_valores_1 = realloc(temp_valores_1, num_data * sizeof(char*));
-        double **tempo_vectores = realloc(vectores, num_data * sizeof(double*))
+        char **temp_valores_1 = NULL;
+        temp_valores_1 = realloc(temp_valores_1, num_data * sizeof(char*));
+        double **tempo_vectores = realloc(vectores, num_data * sizeof(double*));
         if (temp_keys == NULL) {
             printf("Memory allocation failed\n");
             resultado = -1;
-            break;
+            if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
+                pthread_exit(0);
+            }
         }
         if (temp_num_elements == NULL) {
             printf("Memory allocation failed\n");
             resultado = -1;
-            break;
+            if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
+                pthread_exit(0);
+            }
         }
         if (temp_valores_1 == NULL) {
             printf("Memory allocation failed\n");
             resultado = -1;
-            break;
+            if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
+                pthread_exit(0);
+            }
         }
         if (tempo_vectores == NULL) {
             printf("Memory allocation failed\n");
             resultado = -1;
-            break;
+            if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
+                pthread_exit(0);
+            }
         }
         // Hacemos la capacidad de la base de datos más grande
         keys = temp_keys;
@@ -104,7 +111,9 @@ void tratar_mensaje(void  *mess) {
         printf("mensaje.key = %d, copy_key = %d\n", mensaje.clave, keys[num_data - 1]);
         printf("num_elements = %d, copy = %d\n", mensaje.n_elem, num_elements[num_data - 1]);
         printf("valor_1 = %s, copy = %s\n", mensaje.valor_1, valores_1[num_data - 1]);
-        for(int i = 0; i)
+        for(int i = 0; i < mensaje.n_elem;i++){
+            printf("Vector[%d][%d] = %lf", num_data-1, i, vectores[num_data - 1][i]);
+        }
     }
     else if (mensaje.op == 3){
         // Funcion get_values
@@ -112,10 +121,6 @@ void tratar_mensaje(void  *mess) {
         // Buscar valores en data
         for(int i = 0; i < sizeof(keys); i++)
         {
-            if(key[i] == mensaje.clave)
-            {
-
-            }
         }
 
         //Si se ecuentra
