@@ -151,9 +151,57 @@ int delete_key(int key){
 
 
 int set_value(int key, char *value1, int N_value2, double *V_value2){
-    printf("key = %d, value1 = %s, n_elem = %d", key, value1, N_value2);
+    printf("key = %d, value1 = %s, n_elem = %d ", key, value1, N_value2);
     for (int i = 0; i < N_value2; i++){
-        printf("vector[%d] = %lf", i, V_value2[i]);
+        printf("vector[%d] = %lf ", i, V_value2[i]);
     }
-    return 2;
-}
+    printf("\n");
+
+
+    mqd_t q_servidor;       /* cola de mensajes del proceso servidor */
+    mqd_t q_cliente;        /* cola de mensajes para el proceso cliente */
+    char queue_name[100];
+    sprintf(queue_name, "/Cola-%d", getpid());
+    struct mensaje mess;
+    struct mq_attr attr;
+    int res;
+
+    attr.mq_maxmsg = 1;
+    attr.mq_msgsize = sizeof(int);
+
+    q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
+    if (q_cliente == -1){
+        perror("Error al abrir la cola del cliente");
+    }
+    q_servidor = mq_open("/SERVIDOR", O_WRONLY);
+    if (q_servidor == -1){
+        perror("Error al abrir la cola del servidor");
+    }
+
+
+    // Inicializamos el mensaje
+    mess.op = 2;
+    strcpy(mess.cola_cliente, queue_name);
+    for(int i = 0; i < N_value2; i++){mess.vector[i] = V_value2[i];}
+    mess.n_elem = N_value2;
+    strcpy(mess.valor_1, value1);
+    mess.clave = key;
+
+    if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
+        perror("mq_send");
+        return -1;
+    }
+
+
+    if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
+        perror("mq_recv");
+        return -1;
+    }
+
+    mq_close(q_servidor);
+    mq_close(q_cliente);
+    mq_unlink(queue_name);
+
+
+    printf("Queue_Name = %s\n", queue_name);
+    return res;}
