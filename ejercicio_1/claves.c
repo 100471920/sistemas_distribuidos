@@ -59,45 +59,6 @@ int init(){
     return res;
 }
 
-void exit_f(){
-    mqd_t q_servidor;       /* cola de mensajes del proceso servidor */
-    mqd_t q_cliente;        /* cola de mensajes para el proceso cliente */
-    char queue_name[100];
-    sprintf(queue_name, "/Cola-%d", getpid());
-    struct mensaje mess;
-    struct mq_attr attr;
-
-    attr.mq_maxmsg = 1;
-    attr.mq_msgsize = sizeof(int);
-
-    q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
-    if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente");
-    }
-    q_servidor = mq_open("/SERVIDOR", O_WRONLY);
-    if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor");
-    }
-
-    mess.op = -1;
-    strcpy(mess.cola_cliente, queue_name);
-    for(int i = 0; i < 32; i++){mess.vector[i] = 0.0;}
-
-    mess.n_elem = 0;
-
-    strcpy(mess.valor_1, "");
-
-
-    mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0);
-
-    mq_close(q_servidor);
-    mq_close(q_cliente);
-    mq_unlink(queue_name);
-
-
-    printf("Queue_Name = %s\n", queue_name);
-}
-
 int delete_key(int key){
     mqd_t q_servidor;       /* cola de mensajes del proceso servidor */
     mqd_t q_cliente;        /* cola de mensajes para el proceso cliente */

@@ -141,10 +141,6 @@ int main() {
             }
         }
 
-        else if (strcmp(peticion, "salir") == 0){
-            exit_f();
-            return -1;
-        }
         else {
             resultado = -1;
             printf("operacion no reconocida pruebe otra vez\nse reconocen las sigueites operaciones\n");
