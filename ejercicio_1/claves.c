@@ -257,6 +257,8 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     mq_close(q_cliente);
     mq_unlink(queue_name);
 
+    printf("Queue_Name = %s\n", queue_name);
+
     return res;
 }
 
