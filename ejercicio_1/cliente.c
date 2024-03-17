@@ -44,31 +44,26 @@ int main() {
             } else {
                 printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): valor_1 = ");
                 scanf("%s", valor_1);
-                if (strlen(valor_1) > 255) {
-                    printf("La cadena es más larga que 255 caracteres.\n");
-                } else {
-                    printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): num_elements = ");
-                    if ((scanf("%d", &n_elem)) != 1){
-                        printf("[ERROR] El valor de num_elements debe ser un int\n");
-                    } else if(n_elem>32 || n_elem<1){
-                        printf("el numero de elemento posibles en el vector es de entre 1 y 32");
-                    } else {
-                        for(int i = 0;i < n_elem;i++){
-                            printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): vector[%d] = ", i);
-                            if ((scanf("%lf", &vector[i])) != 1){
-                                printf("[ERROR] El valor de los elementos del vector debe ser un double\n");
-                                resultado = -1;
-                                break;
-                            } else {resultado = 0;};
-                        }
-                        if(resultado == 0){
-                            resultado = set_value(key, valor_1, n_elem, vector);
-                            if(resultado < 0){
-                                printf("algo fallo, comprueba que no existe una tupla con la clave que uso");
-                            }
+                printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): num_elements = ");
+                if ((scanf("%d", &n_elem)) != 1){
+                    printf("[ERROR] El valor de num_elements debe ser un int\n");
+                }  else {
+                    for (int i = 0; i < n_elem; i++) {
+                        printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): vector[%d] = ",
+                               i);
+                        if ((scanf("%lf", &vector[i])) != 1) {
+                            printf("[ERROR] El valor de los elementos del vector debe ser un double\n");
+                            resultado = -1;
+                            break;
+                        } else { resultado = 0; };
+                    }
+                    if (resultado == 0) {
+                        resultado = set_value(key, valor_1, n_elem, vector);
+                        if (resultado < 0) {
+                            printf("algo fallo, comprueba que no existe una tupla con la clave que uso");
                         }
                     }
-                }    
+                }
             }
         }
         
@@ -135,7 +130,16 @@ int main() {
                 printf("[ERROR] La clave introducida no es de tipo int\n");
             }
         }
-        else if (strcmp(peticion, "exist") == 0){printf("exist value\n");}
+
+        else if (strcmp(peticion, "exist") == 0){
+            printf("Indique la clave sobre la que se desea hacer exist(key): key = ");
+            if ((scanf("%d", &key)) == 1){
+                resultado = exist(key);
+            }
+            else{
+                printf("[ERROR] La clave introducida no es de tipo int\n");
+            }
+        }
 
         else if (strcmp(peticion, "salir") == 0){
             exit_f();

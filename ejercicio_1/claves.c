@@ -119,7 +119,7 @@ int delete_key(int key){
         perror("Error al abrir la cola del servidor");
     }
 
-// Inicializamos el mensaje
+    // Inicializamos el mensaje
     mess.op = 1;
     strcpy(mess.cola_cliente, queue_name);
     for(int i = 0; i < 32; i++){mess.vector[i] = 0.0;}
@@ -245,7 +245,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
 
 
     
-    int res = 0;
+    int res;
     strcpy(value1, mess.valor_1);
     *N_value2 = mess.n_elem;
     for(int i = 0; i < mess.n_elem; i++) {
