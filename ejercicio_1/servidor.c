@@ -15,6 +15,7 @@ char **valores_1;
 int* num_elements;
 double **vectores;
 int num_data = 0; // Numero de elementos almacenados
+int inicializado = 1;
 
 pthread_mutex_t mutex_shared_variables;
 pthread_mutex_t mutex_mensaje;
@@ -24,7 +25,6 @@ mqd_t  q_servidor;
 
 void tratar_mensaje(void  *mess) {
     int resultado = -1;
-    printf("Hilo creado\n");
     struct mensaje mensaje;    /* mensaje local */
     mqd_t q_cliente;        /* cola del cliente */
 
@@ -41,11 +41,11 @@ void tratar_mensaje(void  *mess) {
     pthread_mutex_unlock(&mutex_mensaje);
 
     /* ejecutar la petición del  y preparar respuesta */
-    printf("Mensaje copiado\n");
     q_cliente = mq_open(mensaje.cola_cliente, O_WRONLY);
-    if (mensaje.op == 0){
+    if (mensaje.op == 0 && inicializado == 1){
         // Funcion init
         resultado = 0;
+        inicializado = 0;
         num_data = 0;
 
         pthread_mutex_lock(&mutex_shared_variables);
@@ -56,6 +56,7 @@ void tratar_mensaje(void  *mess) {
         free(num_elements);
 
         pthread_mutex_unlock(&mutex_shared_variables);
+        printf("Operación init realizada\n");
 
         if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
             pthread_exit(0);
@@ -77,6 +78,7 @@ void tratar_mensaje(void  *mess) {
             if(mq_send(q_cliente, (const char *) &index, sizeof(int), 0) <0){
                 pthread_exit(0);
             }
+            pthread_exit(0);
         }
         free(valores_1[index]);
         free(vectores[index]);
@@ -97,6 +99,7 @@ void tratar_mensaje(void  *mess) {
         resultado = 0;
 
         pthread_mutex_unlock(&mutex_shared_variables);
+        printf("Operación delete_key realizada\n");
 
         if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
             pthread_exit(0);
@@ -173,15 +176,16 @@ void tratar_mensaje(void  *mess) {
 
         pthread_mutex_unlock(&mutex_shared_variables);
 
+        printf("Operación set_value realizada\n");
         // Enviar respuesta al cliente
         if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
-            perror("Error al enviar resultado al cliente");
+            perror("Error al enviar resultado al cliente\n");
             pthread_exit(0);
         }
     }
 
     else if (mensaje.op == 3){
-        // Funcion get_values
+        // Funcion get_value
 
         pthread_mutex_lock(&mutex_shared_variables);
 
@@ -202,10 +206,11 @@ void tratar_mensaje(void  *mess) {
         mensaje.op = resultado;
 
         pthread_mutex_unlock(&mutex_shared_variables);
+        printf("Operación get_value realizada\n");
 
         // Enviar respuesta al cliente
         if(mq_send(q_cliente, (const char *) &mensaje, sizeof(mensaje), 0) <0){
-            perror("Error al enviar resultado al cliente");
+            perror("Error al enviar resultado al cliente\n");
             pthread_exit(0);
         }
     }
@@ -231,21 +236,24 @@ void tratar_mensaje(void  *mess) {
             }
         }
         pthread_mutex_unlock(&mutex_shared_variables);
+        printf("Operación modify_value realizada\n");
+
     }
 
     else if (mensaje.op == 5){
+        // función exist
         resultado = 0;
-
         pthread_mutex_lock(&mutex_shared_variables);
 
         for (int i; i < num_data; i++){
-            printf("keys[%d] = %d, clave = %d\n", i, keys[i], mensaje.clave);
             if (keys[i] == mensaje.clave){
                 resultado = 1;
                 break;
             }
         }
         pthread_mutex_unlock(&mutex_shared_variables);
+        printf("Operación exist realizada\n");
+
     }
 
     mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0);
@@ -265,10 +273,9 @@ int main(){
 
     q_servidor = mq_open("/SERVIDOR", O_CREAT|O_RDONLY, 0700, &attr);
     if (q_servidor == -1) {
-        perror("Error al abrir la cola");
+        perror("Error al abrir la cola\n");
         return -1;
     }
-    printf("Cola Servidor: %d\n", q_servidor);
 
 
     pthread_mutex_init(&mutex_shared_variables,NULL);
@@ -282,14 +289,8 @@ int main(){
     while(1) {
 
         if (mq_receive(q_servidor, (char *) &mensaje, sizeof(mensaje), 0) < 0 ){
-            perror("Error al recibir el mensaje");
+            perror("Error al recibir el mensaje\n");
             return -1;
-        }
-        printf("Mensaje recibido\n");
-        if(mensaje.op == -1){
-            // Mensaje para terminar la ejecución del servidor y que este cierre sus colas
-            printf("Terminando ejecución...\n");
-            break;
         }
         if (pthread_create(&thid, &t_attr, (void *)tratar_mensaje, (void *)&mensaje)== 0) {
             // Se espera a que el thread copie el mensaje
@@ -299,9 +300,4 @@ int main(){
             pthread_mutex_unlock(&mutex_mensaje);
         }
     }
-
-    mq_close(q_servidor);
-    mq_unlink("/SERVIDOR"); // De momento comentar esta linea para que se quede abierta la cola
-    return 0;
-
 }

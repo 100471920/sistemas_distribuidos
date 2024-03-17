@@ -23,11 +23,11 @@ int init(){
 
     q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
     if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente");
+        perror("Error al abrir la cola del cliente\n");
     }
     q_servidor = mq_open("/SERVIDOR", O_WRONLY);
     if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor");
+        perror("Error al abrir la cola del servidor\n");
     }
 
 
@@ -40,13 +40,13 @@ int init(){
     mess.clave = 0;
 
     if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("mq_send");
+        perror("Error al enviar\n");
         return -1;
     }
 
 
     if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
-        perror("mq_recv");
+        perror("Error al recibir\n");
         return -1;
     }
 
@@ -55,7 +55,6 @@ int init(){
     mq_unlink(queue_name);
 
 
-    printf("Queue_Name = %s\n", queue_name);
     return res;
 }
 
@@ -73,11 +72,11 @@ int delete_key(int key){
 
     q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
     if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente");
+        perror("Error al abrir la cola del cliente\n");
     }
     q_servidor = mq_open("/SERVIDOR", O_WRONLY);
     if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor");
+        perror("Error al abrir la cola del servidor\n");
     }
 
     // Inicializamos el mensaje
@@ -89,13 +88,13 @@ int delete_key(int key){
     mess.clave = key;
 
     if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("mq_send");
+        perror("Error al recibir\n");
         return -1;
     }
 
 
     if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
-        perror("mq_recv");
+        perror("Error al recibir\n");
         return -1;
     }
 
@@ -104,18 +103,10 @@ int delete_key(int key){
     mq_unlink(queue_name);
 
 
-    printf("Queue_Name = %s\n", queue_name);
     return res;
 }
 
 int set_value(int key, char *value1, int N_value2, double *V_value2){
-    printf("key = %d, value1 = %s, n_elem = %d ", key, value1, N_value2);
-    for (int i = 0; i < N_value2; i++){
-        printf("vector[%d] = %lf ", i, V_value2[i]);
-    }
-    printf("\n");
-
-
     mqd_t q_servidor;       /* cola de mensajes del proceso servidor */
     mqd_t q_cliente;        /* cola de mensajes para el proceso cliente */
     char queue_name[100];
@@ -129,11 +120,11 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
 
     q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
     if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente");
+        perror("Error al abrir la cola del cliente\n");
     }
     q_servidor = mq_open("/SERVIDOR", O_WRONLY);
     if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor");
+        perror("Error al abrir la cola del servidor\n");
     }
 
 
@@ -142,17 +133,18 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     strcpy(mess.cola_cliente, queue_name);
     for(int i = 0; i < N_value2; i++){mess.vector[i] = V_value2[i];}
     mess.n_elem = N_value2;
+    if(strlen(value1) > 255){return -1;}
     strcpy(mess.valor_1, value1);
     mess.clave = key;
 
     if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("mq_send");
+        perror("Error al enviar\n");
         return -1;
     }
 
 
     if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
-        perror("mq_recv");
+        perror("Error al recibir\n");
         return -1;
     }
 
@@ -161,7 +153,6 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     mq_unlink(queue_name);
 
 
-    printf("Queue_Name = %s\n", queue_name);
     return res;}
 
 int get_value(int key, char *value1, int *N_value2, double *V_value2) {
@@ -177,12 +168,12 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
 
     q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
     if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente");
+        perror("Error al abrir la cola del cliente\n");
         return -1;
     }
     q_servidor = mq_open("/SERVIDOR", O_WRONLY);
     if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor");
+        perror("Error al abrir la cola del servidor\n");
         return -1;
     }
 
@@ -195,12 +186,12 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     mess.clave = key;
 
     if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("mq_send");
+        perror("Error al recibir\n");
         return -1;
     }
 
     if (mq_receive(q_cliente, (char *) &mess, sizeof(struct mensaje), 0) < 0){
-        perror("mq_recv");
+        perror("Error al recibir\n");
         return -1;
     }
 
@@ -218,19 +209,11 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     mq_close(q_cliente);
     mq_unlink(queue_name);
 
-    printf("Queue_Name = %s\n", queue_name);
 
     return res;
 }
 
 int modify_value(int key, char *value1, int N_value2, double *V_value2){
-    printf("key = %d, value1 = %s, n_elem = %d ", key, value1, N_value2);
-    for (int i = 0; i < N_value2; i++){
-        printf("vector[%d] = %lf ", i, V_value2[i]);
-    }
-    printf("\n");
-
-
     mqd_t q_servidor;       /* cola de mensajes del proceso servidor */
     mqd_t q_cliente;        /* cola de mensajes para el proceso cliente */
     char queue_name[100];
@@ -244,11 +227,11 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2){
 
     q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
     if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente");
+        perror("Error al abrir la cola del cliente\n");
     }
     q_servidor = mq_open("/SERVIDOR", O_WRONLY);
     if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor");
+        perror("Error al abrir la cola del servidor\n");
     }
 
 
@@ -257,17 +240,18 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2){
     strcpy(mess.cola_cliente, queue_name);
     for(int i = 0; i < N_value2; i++){mess.vector[i] = V_value2[i];}
     mess.n_elem = N_value2;
+    if(strlen(value1) > 255){return -1;}
     strcpy(mess.valor_1, value1);
     mess.clave = key;
 
     if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("mq_send");
+        perror("Error al envíar\n");
         return -1;
     }
 
 
     if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
-        perror("mq_recv");
+        perror("Error al recibir\n");
         return -1;
     }
 
@@ -276,7 +260,6 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2){
     mq_unlink(queue_name);
 
 
-    printf("Queue_Name = %s\n", queue_name);
     return res;
 }
 
@@ -294,11 +277,11 @@ int exist(int key){
 
     q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
     if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente");
+        perror("Error al abrir la cola del cliente\n");
     }
     q_servidor = mq_open("/SERVIDOR", O_WRONLY);
     if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor");
+        perror("Error al abrir la cola del servidor\n");
     }
 
 
@@ -311,13 +294,13 @@ int exist(int key){
     mess.clave = key;
 
     if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("mq_send");
+        perror("Error al enviar\n");
         return -1;
     }
 
 
     if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
-        perror("mq_recv");
+        perror("Error al recibir\n");
         return -1;
     }
 
@@ -325,7 +308,5 @@ int exist(int key){
     mq_close(q_cliente);
     mq_unlink(queue_name);
 
-
-    printf("Queue_Name = %s\n", queue_name);
     return res;
 }

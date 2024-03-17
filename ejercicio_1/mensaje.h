@@ -15,11 +15,4 @@ struct mensaje{
     double vector[32];
 };
 
-struct database{
-    int clave;
-    char *valor_1;
-    int n_elem;
-    double *vector;
-};
-
 #endif //DISTRIBUIDOS_MENSAJE_H

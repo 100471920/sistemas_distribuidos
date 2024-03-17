@@ -18,50 +18,43 @@ void limpiarBuffer() {
 }
 
 int main() {
-    printf("Self PID = %d\n", getpid());
     char peticion[MAXSIZE];
     int resultado = -1;
 
     while(1) {
         printf("Indique la operación a realizar: ");
         scanf("%s", peticion);
-        printf("Peticion = %s\n", peticion);
         int key;
         char valor_1[MAXSIZE];
         int n_elem;
         double vector[32];
 
         if (strcmp(peticion,"init") == 0) {
-            printf("Exec init");
             resultado = init();
         }
 
         else if (strcmp(peticion, "set_value") == 0){
-            printf("Set value\n");
             printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): key = ");
             if ((scanf("%d", &key)) != 1){
-                printf("[ERROR] El valor de key debe ser un int\n");
+                perror("[ERROR] El valor de key debe ser un int\n");
             } else {
                 printf("Indique el valor 1 para set_value(key, valor_1, num_elements, vector): valor_1 = ");
                 scanf("%s", valor_1);
                 printf("Indique el numero de elementos de valor 2 para set_value(key, valor_1, num_elements, vector): num_elements = ");
                 if ((scanf("%d", &n_elem)) != 1){
-                    printf("[ERROR] El valor de num_elements debe ser un int\n");
+                    perror("[ERROR] El valor de num_elements debe ser un int\n");
                 }  else {
                     for (int i = 0; i < n_elem; i++) {
                         printf("Indique el elemento para set_value(key, valor_1, num_elements, vector): vector[%d] = ",
                                i);
                         if ((scanf("%lf", &vector[i])) != 1) {
-                            printf("[ERROR] El valor de los elementos del vector debe ser un double\n");
+                            perror("[ERROR] El valor de los elementos del vector debe ser un double\n");
                             resultado = -1;
                             break;
                         } else { resultado = 0; };
                     }
                     if (resultado == 0) {
                         resultado = set_value(key, valor_1, n_elem, vector);
-                        if (resultado < 0) {
-                            printf("[ERROR] algo fallo, comprueba que no existe una tupla con la clave que uso");
-                        }
                     }
                 }
             }
@@ -113,9 +106,6 @@ int main() {
                     }
                     if (resultado == 0) {
                         resultado = modify_value(key, valor_1, n_elem, vector);
-                        if (resultado < 0) {
-                            printf("[ERROR] algo fallo, comprueba que existe una tupla con la clave que uso");
-                        }
                     }
                 }
             }
@@ -127,7 +117,7 @@ int main() {
                 resultado = delete_key(key);
             }
             else{
-                printf("[ERROR] La clave introducida no es de tipo int\n");
+                perror("[ERROR] La clave introducida no es de tipo int\n");
             }
         }
 
@@ -137,18 +127,15 @@ int main() {
                 resultado = exist(key);
             }
             else{
-                printf("[ERROR] La clave introducida no es de tipo int\n");
+                perror("[ERROR] La clave introducida no es de tipo int\n");
             }
         }
 
         else {
             resultado = -1;
-            printf("operacion no reconocida pruebe otra vez\nse reconocen las sigueites operaciones\n");
-            printf("set_value\nget_value\nmodify_value\ndelete_key\nexist\nsalir");
+            printf("[ERROR] Operación no reconocida\n");
         }
-        printf("\nResultado = %d\n", resultado);
+        printf("Resultado = %d\n", resultado);
         limpiarBuffer();
     }
-
-    return 0;
 }
