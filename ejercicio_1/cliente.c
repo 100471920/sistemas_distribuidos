@@ -42,14 +42,14 @@ int main() {
             if ((scanf("%d", &key)) != 1){
                 printf("[ERROR] El valor de key debe ser un int\n");
             } else {
-                printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): valor_1 = ");
+                printf("Indique el valor 1 para set_value(key, valor_1, num_elements, vector): valor_1 = ");
                 scanf("%s", valor_1);
-                printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): num_elements = ");
+                printf("Indique el numero de elementos de valor 2 para set_value(key, valor_1, num_elements, vector): num_elements = ");
                 if ((scanf("%d", &n_elem)) != 1){
                     printf("[ERROR] El valor de num_elements debe ser un int\n");
                 }  else {
                     for (int i = 0; i < n_elem; i++) {
-                        printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): vector[%d] = ",
+                        printf("Indique el elemento para set_value(key, valor_1, num_elements, vector): vector[%d] = ",
                                i);
                         if ((scanf("%lf", &vector[i])) != 1) {
                             printf("[ERROR] El valor de los elementos del vector debe ser un double\n");
@@ -60,7 +60,7 @@ int main() {
                     if (resultado == 0) {
                         resultado = set_value(key, valor_1, n_elem, vector);
                         if (resultado < 0) {
-                            printf("algo fallo, comprueba que no existe una tupla con la clave que uso");
+                            printf("[ERROR] algo fallo, comprueba que no existe una tupla con la clave que uso");
                         }
                     }
                 }
@@ -86,7 +86,7 @@ int main() {
                     }
                     printf("\n");
                 } else {
-                    printf("Error: No se pudo obtener la tupla para la clave %d ,compruebe que existe", key);
+                    printf("[Error] No se pudo obtener la tupla para la clave %d ,compruebe que existe", key);
                 }
             }
         }
@@ -96,14 +96,14 @@ int main() {
             if ((scanf("%d", &key)) != 1){
                 printf("[ERROR] El valor de key debe ser un int\n");
             } else {
-                printf("Indique la clave sobre la que se desea hacer modify_value(key, valor_1, num_elements, vector): valor_1 = ");
+                printf("Indique el valor 1 para modify_value(key, valor_1, num_elements, vector): valor_1 = ");
                 scanf("%s", valor_1);
-                printf("Indique la clave sobre la que se desea hacer modify_value(key, valor_1, num_elements, vector): num_elements = ");
+                printf("Indique el numero de elementos de valor 2 para modify_value(key, valor_1, num_elements, vector): num_elements = ");
                 if ((scanf("%d", &n_elem)) != 1){
                     printf("[ERROR] El valor de num_elements debe ser un int\n");
                 }  else {
                     for (int i = 0; i < n_elem; i++) {
-                        printf("Indique la clave sobre la que se desea hacer modify_value(key, valor_1, num_elements, vector): vector[%d] = ",
+                        printf("Indique el elemento para hacer modify_value(key, valor_1, num_elements, vector): vector[%d] = ",
                                i);
                         if ((scanf("%lf", &vector[i])) != 1) {
                             printf("[ERROR] El valor de los elementos del vector debe ser un double\n");
@@ -114,7 +114,7 @@ int main() {
                     if (resultado == 0) {
                         resultado = modify_value(key, valor_1, n_elem, vector);
                         if (resultado < 0) {
-                            printf("algo fallo, comprueba que no existe una tupla con la clave que uso");
+                            printf("[ERROR] algo fallo, comprueba que existe una tupla con la clave que uso");
                         }
                     }
                 }

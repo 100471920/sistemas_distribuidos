@@ -16,6 +16,7 @@ int* num_elements;
 double **vectores;
 int num_data = 0; // Numero de elementos almacenados
 
+pthread_mutex_t mutex_shared_variables;
 pthread_mutex_t mutex_mensaje;
 int mensaje_no_copiado = 1;
 pthread_cond_t cond_mensaje;
@@ -47,10 +48,14 @@ void tratar_mensaje(void  *mess) {
         resultado = 0;
         num_data = 0;
 
+        pthread_mutex_lock(&mutex_shared_variables);
+
         free(valores_1);
         free(keys);
         free(vectores);
         free(num_elements);
+
+        pthread_mutex_unlock(&mutex_shared_variables);
 
         if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
             pthread_exit(0);
@@ -60,6 +65,8 @@ void tratar_mensaje(void  *mess) {
     else if (mensaje.op == 1){
         // Funcion delete_key
         int index = -1;
+
+        pthread_mutex_lock(&mutex_shared_variables);
 
         for (int i = 0; i < num_data; i++){
             if (keys[i] == mensaje.clave){
@@ -88,6 +95,9 @@ void tratar_mensaje(void  *mess) {
         vectores = realloc(vectores, num_data * sizeof(double *));
 
         resultado = 0;
+
+        pthread_mutex_unlock(&mutex_shared_variables);
+
         if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
             pthread_exit(0);
         }
@@ -96,6 +106,9 @@ void tratar_mensaje(void  *mess) {
     else if (mensaje.op == 2){
         // set_value
         resultado = 0;
+
+        pthread_mutex_lock(&mutex_shared_variables);
+
         for(int i = 0; i < num_data; i++) {
             if (keys[i] == mensaje.clave) {
                 resultado = -1;
@@ -157,6 +170,9 @@ void tratar_mensaje(void  *mess) {
                 vectores[num_data - 1][i] = mensaje.vector[i];
             }
             }
+
+        pthread_mutex_unlock(&mutex_shared_variables);
+
         // Enviar respuesta al cliente
         if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
             perror("Error al enviar resultado al cliente");
@@ -166,6 +182,8 @@ void tratar_mensaje(void  *mess) {
 
     else if (mensaje.op == 3){
         // Funcion get_values
+
+        pthread_mutex_lock(&mutex_shared_variables);
 
         // Buscar valores en la base de datos
         for(int i = 0; i < num_data; i++) {
@@ -183,6 +201,8 @@ void tratar_mensaje(void  *mess) {
 
         mensaje.op = resultado;
 
+        pthread_mutex_unlock(&mutex_shared_variables);
+
         // Enviar respuesta al cliente
         if(mq_send(q_cliente, (const char *) &mensaje, sizeof(mensaje), 0) <0){
             perror("Error al enviar resultado al cliente");
@@ -192,6 +212,9 @@ void tratar_mensaje(void  *mess) {
 
     else if (mensaje.op == 4){
         // Función modify_value
+
+        pthread_mutex_lock(&mutex_shared_variables);
+
         for (int i = 0; i < num_data; i++){
             if (mensaje.clave == keys[i]){
                 valores_1[i] = realloc(valores_1[i], sizeof(mensaje.valor_1) * sizeof(char));
@@ -207,10 +230,14 @@ void tratar_mensaje(void  *mess) {
                 break;
             }
         }
+        pthread_mutex_unlock(&mutex_shared_variables);
     }
 
     else if (mensaje.op == 5){
         resultado = 0;
+
+        pthread_mutex_lock(&mutex_shared_variables);
+
         for (int i; i < num_data; i++){
             printf("keys[%d] = %d, clave = %d\n", i, keys[i], mensaje.clave);
             if (keys[i] == mensaje.clave){
@@ -218,6 +245,7 @@ void tratar_mensaje(void  *mess) {
                 break;
             }
         }
+        pthread_mutex_unlock(&mutex_shared_variables);
     }
 
     mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0);
@@ -243,7 +271,7 @@ int main(){
     printf("Cola Servidor: %d\n", q_servidor);
 
 
-
+    pthread_mutex_init(&mutex_shared_variables,NULL);
     pthread_mutex_init(&mutex_mensaje, NULL);
     pthread_cond_init(&cond_mensaje, NULL);
     pthread_attr_init(&t_attr);
