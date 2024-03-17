@@ -44,14 +44,50 @@ void tratar_mensaje(void  *mess) {
     q_cliente = mq_open(mensaje.cola_cliente, O_WRONLY);
     if (mensaje.op == 0){
         // Funcion init
-        resultado = 1;
+        resultado = 0;
+        num_data = 0;
+
+        free(valores_1);
+        free(keys);
+        free(vectores);
+        free(num_elements);
+
         if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
             pthread_exit(0);
         }
     }
+
     else if (mensaje.op == 1){
         // Funcion delete_key
-        resultado = 100;
+        int index = -1;
+
+        for (int i = 0; i < num_data; i++){
+            if (keys[i] == mensaje.clave){
+                index = i;
+            }
+        }
+        if (index == -1){
+            if(mq_send(q_cliente, (const char *) &index, sizeof(int), 0) <0){
+                pthread_exit(0);
+            }
+        }
+        free(valores_1[index]);
+        free(vectores[index]);
+
+        for (int i = index; i < num_data - 1; i++){
+            keys[i] = keys[i + 1];
+            valores_1[i] = valores_1[i + 1];
+            num_elements[i] = num_elements[i + 1];
+            vectores[i] = vectores[i + 1];
+        }
+        num_data--;
+
+        keys = realloc(keys, num_data * sizeof(int));
+        valores_1 = realloc(valores_1, num_data * sizeof(char *));
+        num_elements = realloc(num_elements, num_data * sizeof(int));
+        vectores = realloc(vectores, num_data * sizeof(double *));
+
+        resultado = 0;
         if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
             pthread_exit(0);
         }
@@ -59,24 +95,23 @@ void tratar_mensaje(void  *mess) {
 
     else if (mensaje.op == 2){
         // set_value
-        int resultado = 0;
+        resultado = 0;
         for(int i = 0; i < num_data; i++) {
             if (keys[i] == mensaje.clave) {
                 resultado = -1;
                 break;
             }
         }
-        // Enviar respuesta al cliente
-        if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
-            perror("Error al enviar resultado al cliente");
-            pthread_exit(0);
+        if ((mensaje.n_elem > 32) | (mensaje.n_elem < 1)){
+            resultado = -1;
         }
-        if(resultado == 0){
+
+        if(resultado != -1){
             num_data++;
             int *temp_keys = realloc(keys, num_data * sizeof(int));
             int *temp_num_elements = realloc(num_elements, num_data * sizeof(int));
             char **temp_valores_1 = NULL;
-            temp_valores_1 = realloc(temp_valores_1, num_data * sizeof(char*));
+            temp_valores_1 = realloc(valores_1, num_data * sizeof(char*));
             double **tempo_vectores = realloc(vectores, num_data * sizeof(double*));
             if (temp_keys == NULL) {
                 printf("Memory allocation failed\n");
@@ -121,12 +156,11 @@ void tratar_mensaje(void  *mess) {
             for (int i = 0; i < mensaje.n_elem; i++){
                 vectores[num_data - 1][i] = mensaje.vector[i];
             }
-            printf("mensaje.key = %d, copy_key = %d\n", mensaje.clave, keys[num_data - 1]);
-            printf("num_elements = %d, copy = %d\n", mensaje.n_elem, num_elements[num_data - 1]);
-            printf("valor_1 = %s, copy = %s\n", mensaje.valor_1, valores_1[num_data - 1]);
-            for(int i = 0; i < mensaje.n_elem;i++){
-                printf("Vector[%d][%d] = %lf", num_data-1, i, vectores[num_data - 1][i]);
             }
+        // Enviar respuesta al cliente
+        if(mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) <0){
+            perror("Error al enviar resultado al cliente");
+            pthread_exit(0);
         }
     }
 
@@ -147,15 +181,42 @@ void tratar_mensaje(void  *mess) {
             }
         }
 
-        // Si no se encuentra la clave, se envía un resultado negativo
-        if (resultado == -1) {
-            printf("La clave %d no se encuentra en la base de datos\n", mensaje.clave);
-        }
+        mensaje.op = resultado;
 
         // Enviar respuesta al cliente
         if(mq_send(q_cliente, (const char *) &mensaje, sizeof(mensaje), 0) <0){
             perror("Error al enviar resultado al cliente");
             pthread_exit(0);
+        }
+    }
+
+    else if (mensaje.op == 4){
+        // Función modify_value
+        for (int i = 0; i < num_data; i++){
+            if (mensaje.clave == keys[i]){
+                valores_1[i] = realloc(valores_1[i], sizeof(mensaje.valor_1) * sizeof(char));
+                strcpy(valores_1[i], mensaje.valor_1);
+                if (mensaje.n_elem != num_elements[i]){
+                    num_elements[i] = mensaje.n_elem;
+                    vectores[i] = realloc(vectores[i], sizeof(mensaje.n_elem) * sizeof(double));
+                }
+                for (int j = 0; j < mensaje.n_elem; j++){
+                    vectores[i][j] = mensaje.vector[j];
+                }
+                resultado = 0;
+                break;
+            }
+        }
+    }
+
+    else if (mensaje.op == 5){
+        resultado = 0;
+        for (int i; i < num_data; i++){
+            printf("keys[%d] = %d, clave = %d\n", i, keys[i], mensaje.clave);
+            if (keys[i] == mensaje.clave){
+                resultado = 1;
+                break;
+            }
         }
     }
 
