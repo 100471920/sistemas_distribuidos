@@ -8,7 +8,6 @@
 
 struct mensaje{
     int op;
-    char cola_cliente[100];
     int clave;
     char valor_1[MAXSIZE];
     int n_elem;

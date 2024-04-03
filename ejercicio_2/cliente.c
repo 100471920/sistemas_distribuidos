@@ -1,16 +1,11 @@
 //
 // Created by rubenubuntu on 11/03/24.
 //
-#include <mqueue.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include "mensaje.h"
 #include "claves.h"
 
-char queuename[100];
 
 void limpiarBuffer() {
     int c;
@@ -59,7 +54,7 @@ int main() {
                 }
             }
         }
-        
+        /*
         else if (strcmp(peticion, "get_value") == 0){
             printf("Get value\n");
             printf("Indique la clave de la tupla que desea obtener: key = ");
@@ -130,7 +125,7 @@ int main() {
                 perror("[ERROR] La clave introducida no es de tipo int\n");
             }
         }
-
+*/
         else {
             resultado = -1;
             printf("[ERROR] Operación no reconocida\n");
