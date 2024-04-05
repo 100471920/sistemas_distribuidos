@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include "mensaje.h"
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -53,14 +52,16 @@ void tratar_mensaje(int  *socket) {
             printf("Error en recepción\n");
             continue;
         }
-        printf("recibido: %s\n", message);
+        // Esta función cambia en message "," por "\0" e internamente sabe en que \0 se encuentra,
+        // por lo que luego se puede llamar a la misma funcion con NULL y seguirá en el mismo estado.
+        // Esto se hace para poder parsear el mensaje recibido.
         token = strtok(message, ",");
         op = atoi(token);
         if (op < 0 || op > 5){
             printf("Error al leer entero");
             op = 1000;
         }
-        /* ejecutar la petición del  y preparar respuesta */
+        // Ejecutar la petición y enviar respuesta
         if (op == 0) {
             // Funcion init no leer mas
             strcpy(resultado, "0");
@@ -68,6 +69,7 @@ void tratar_mensaje(int  *socket) {
 
             pthread_mutex_lock(&mutex_shared_variables);
 
+            // Se liberan las variables que simulan la base de datos.
             free(valores_1);
             free(keys);
             free(vectores);
@@ -130,8 +132,9 @@ void tratar_mensaje(int  *socket) {
             int n_elem;
             double vector[32];
 
-            printf("manolo\n");
 
+            // Cada vez que se hace strtok() se pasa a otro valor de entrada, por lo que se van almacenando los valores
+            // en variables intermedias
             token = strtok(NULL, ",");
             key = atoi(token);
             token = strtok(NULL, ",");
@@ -149,7 +152,37 @@ void tratar_mensaje(int  *socket) {
 
 
             }
+
+            // Se reserva memoria para los nuevos valores
+            int *temp_keys = realloc(keys, num_data * sizeof(int));
+            int *temp_num_elements = realloc(num_elements, num_data * sizeof(int));
+            char **temp_valores_1 = NULL;
+            temp_valores_1 = realloc(valores_1, num_data * sizeof(char *));
+            double **tempo_vectores = realloc(vectores, num_data * sizeof(double *));
+            if (temp_keys == NULL) {
+                printf("Memory allocation failed\n");
+                strcpy(resultado, "-1");
+
+            }
+            if (temp_num_elements == NULL) {
+                printf("Memory allocation failed\n");
+                strcpy(resultado, "-1");
+
+            }
+            if (temp_valores_1 == NULL) {
+                printf("Memory allocation failed\n");
+                strcpy(resultado, "-1");
+
+            }
+            if (tempo_vectores == NULL) {
+                printf("Memory allocation failed\n");
+                strcpy(resultado, "-1");
+            }
+
+            // Se hace lock por las condiciones de carrera
             pthread_mutex_lock(&mutex_shared_variables);
+
+            // Si cuando se intenta insertar key esta ya existe, da error
             for (int i = 0; i < num_data; i++) {
                 if (keys[i] == key) {
                     strcpy(resultado, "-1");
@@ -157,32 +190,10 @@ void tratar_mensaje(int  *socket) {
                 }
             }
 
+            // Solo se ejecuta si no ha habido errores previamente
             if (strcmp(resultado, "0")) {
-                num_data++;
-                int *temp_keys = realloc(keys, num_data * sizeof(int));
-                int *temp_num_elements = realloc(num_elements, num_data * sizeof(int));
-                char **temp_valores_1 = NULL;
-                temp_valores_1 = realloc(valores_1, num_data * sizeof(char *));
-                double **tempo_vectores = realloc(vectores, num_data * sizeof(double *));
-                if (temp_keys == NULL) {
-                    printf("Memory allocation failed\n");
-                    strcpy(resultado, "-1");
+                num_data++; // Se añade un dato a la base de datos
 
-                }
-                if (temp_num_elements == NULL) {
-                    printf("Memory allocation failed\n");
-                    strcpy(resultado, "-1");
-
-                }
-                if (temp_valores_1 == NULL) {
-                    printf("Memory allocation failed\n");
-                    strcpy(resultado, "-1");
-
-                }
-                if (tempo_vectores == NULL) {
-                    printf("Memory allocation failed\n");
-                    strcpy(resultado, "-1");
-                }
                 // Hacemos la capacidad de la base de datos más grande
                 keys = temp_keys;
                 valores_1 = temp_valores_1;
@@ -276,6 +287,7 @@ void tratar_mensaje(int  *socket) {
 
         }
 */
+        // Se envía la respuesta al cliente
         err = send(sc, (char*) message, strlen(message) + 1, 0); // Envia el mensaje a sd
         if(err == -1){
             printf("Error al enviar\n");
