@@ -55,10 +55,14 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     int sd;
     struct sockaddr_in server_addr;
     char received[256];
-    char to_send[256];
+    char *to_send = malloc(3 * sizeof(char));
 
-    strcpy(to_send, "2");
-    printf("n_op a enviar %s", to_send);
+    if (to_send == NULL) {
+        printf("Memory allocation failed.\n");
+        return -1;
+    }
+
+    strcpy(to_send, "2,");
 
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd < 0){
@@ -74,29 +78,52 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
         printf("Error en connect\n");
         return -1;
     }
+    int int_length = snprintf(NULL, 0, "%d", key);
+    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
+    if (to_send == NULL) {
+        printf("Memory reallocation failed.\n");
+        return -1;
+    }
+    sprintf(to_send + strlen(to_send), "%d,", key);
 
-    err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
-    if(err == -1){
-        printf("Error al enviar n_op\n");
+    int_length = snprintf(NULL, 0, "%d", N_value2);
+    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
+    if (to_send == NULL) {
+        printf("Memory reallocation failed.\n");
+        return -1;
     }
+    sprintf(to_send + strlen(to_send), "%d,", N_value2);
 
-    strcpy(to_send, value1);
-    err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
-    if(err == -1){
-        printf("Error al enviar value 1\n");
-    }
-    sprintf(to_send, "%d", N_value2);
-    err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
-    if(err == -1){
-        printf("Error al enviar value 1\n");
-    }
+    int double_length;
     for (int i = 0; i < N_value2; i++){
-        sprintf(to_send, "%f", V_value2[i]);
-        err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
-        if(err == -1){
-            printf("Error al enviar value 1\n");
+        double_length = snprintf(NULL, 0, "%f", V_value2[i]);
+        to_send = realloc(to_send, (strlen(to_send) + double_length + 2) * sizeof(char));
+
+        if (to_send == NULL) {
+            printf("Memory reallocation failed.\n");
+            return -1;
         }
+        sprintf(to_send + strlen(to_send), "%f,", V_value2[i]);
     }
+    printf("to_send = %s\n", to_send);
+
+    size_t str_length = strlen(value1);
+    to_send = realloc(to_send, (strlen(to_send) + str_length + 1) * sizeof(char));
+    if (to_send == NULL) {
+        printf("Memory reallocation failed.\n");
+        return -1;
+    }
+    strcat(to_send, value1);
+
+    printf("to_send = %s\n", to_send);
+
+    err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
+    if(err == -1){
+        printf("Error al enviar value 1\n");
+
+    }
+
+    free(to_send);
 
     recv(sd, received, 256, 0);
     if (sscanf(received, "%d", &res) != 1){

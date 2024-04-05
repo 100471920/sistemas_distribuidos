@@ -29,7 +29,8 @@ void tratar_mensaje(int  *socket) {
     char *resultado = (char*)malloc(3 * sizeof(char));
     int sc;    /* socket local */
     int op = 0;
-    char message[256];
+    char message[1807];
+    char *token;
 
     /* el thread copia el mensaje a un mensaje local */
     pthread_mutex_lock(&mutex_mensaje);
@@ -47,20 +48,22 @@ void tratar_mensaje(int  *socket) {
 
     do {
         strcpy(resultado, "-1");
-        int err = recv(sc, (char *) &message, 255, 0);   // recibe la operación
+        int err = recv(sc, (char *) &message, 1807, 0);   // recibe la operación
         if (err == -1) {
             printf("Error en recepción\n");
             continue;
         }
-
-        if (sscanf(message, "%d", &op) != 1){
+        printf("recibido: %s\n", message);
+        token = strtok(message, ",");
+        op = atoi(token);
+        if (op < 0 || op > 5){
             printf("Error al leer entero");
             op = 1000;
         }
         /* ejecutar la petición del  y preparar respuesta */
         if (op == 0) {
             // Funcion init no leer mas
-            strcpy(resultado, "33");
+            strcpy(resultado, "0");
             num_data = 0;
 
             pthread_mutex_lock(&mutex_shared_variables);
@@ -123,67 +126,38 @@ void tratar_mensaje(int  *socket) {
             // set_value (leer mas parametros)
             strcpy(resultado, "0");
             int key;
-            char value_1[256];
+            char *value_1;
             int n_elem;
             double vector[32];
-            printf("Inicio set value\n");
 
-            int err = recv(sc, (char *) &message, 255, 0);   // recibe la key
             printf("manolo\n");
-            if (err == -1) {
-                printf("Error en recepción\n");
-                continue;
-            }
-            if (sscanf(message, "%d", &key) != 1){
-                printf("Error al leer key");
-            }
-            printf("key leida\n");
 
-            err = recv(sc, (char *) &message, 255, 0);   // recibe value_1
-            if (err == -1) {
-                printf("Error en recepción\n");
-                continue;
+            token = strtok(NULL, ",");
+            key = atoi(token);
+            token = strtok(NULL, ",");
+            n_elem = atoi(token);
+            if ((n_elem > 32) | (n_elem < 1)) {
+                strcpy(resultado, "-1");
             }
-            strcpy(value_1, message);
-            printf("value1 leida\n");
+            else{
+            for (int i = 0; i < n_elem;i++){
+                token = strtok(NULL, ",");
+                vector[i] = atof(token);
+            }
 
-
-            err = recv(sc, (char *) &message, 255, 0);   // recibe n_elem
-            if (err == -1) {
-                printf("Error en recepción\n");
-                continue;
-            }
-            if (sscanf(message, "%d", &n_elem) != 1){
-                printf("Error al leer n_elem");
-            }
-            printf("nelem leida\n");
-
-            for(int j = 0; j < n_elem; j++){
-                int err = recv(sc, (char *) &message, 255, 0);   // recibe el vector
-                if (err == -1) {
-                    printf("Error en recepción\n");
-                    continue;
-                }
-                if (sscanf(message, "%lf", &vector[j]) != 1){
-                    printf("Error al leer vector");
-                }
-            }
-            printf("vector leida\n");
+            value_1 = strtok(NULL, ",");
 
 
+            }
             pthread_mutex_lock(&mutex_shared_variables);
-
             for (int i = 0; i < num_data; i++) {
                 if (keys[i] == key) {
                     strcpy(resultado, "-1");
                     break;
                 }
             }
-            if ((n_elem > 32) | (n_elem < 1)) {
-                strcpy(resultado, "-1");
-            }
 
-            if (strcmp(resultado, "-1")) {
+            if (strcmp(resultado, "0")) {
                 num_data++;
                 int *temp_keys = realloc(keys, num_data * sizeof(int));
                 int *temp_num_elements = realloc(num_elements, num_data * sizeof(int));
