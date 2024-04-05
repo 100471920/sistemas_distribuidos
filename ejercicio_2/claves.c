@@ -21,8 +21,8 @@ int init(){
     char received[256];
     char to_send[256];
 
+    // Se copia el código de operación
     strcpy(to_send, "0");
-    printf("n_op a enviar %s", to_send);
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd < 0){
         perror("Error in socket");
@@ -37,10 +37,15 @@ int init(){
         printf("Error en connect\n");
         return -1;
     }
+
+    // Se envía la operación
     err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
     if(err == -1){
         printf("Error al enviar\n");
     }
+
+
+    // Se espera la respuesta del servidor
     recv(sd, received, 256, 0);
     if (sscanf(received, "%d", &res) != 1){
         printf("Error al recibir respuesta");
@@ -61,7 +66,7 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
         printf("Memory allocation failed.\n");
         return -1;
     }
-
+    // Se escribe en el buffer to_send el número de operacion
     strcpy(to_send, "2,");
 
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -78,16 +83,18 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
         printf("Error en connect\n");
         return -1;
     }
+    // Se calculan los caracteres de la clave introducida y se reserva espacio para copiarlo en la valiable to_send
     int int_length = snprintf(NULL, 0, "%d", key);
-    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
+    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +2 por el final de string y la coma de separacion
     if (to_send == NULL) {
         printf("Memory reallocation failed.\n");
         return -1;
     }
     sprintf(to_send + strlen(to_send), "%d,", key);
 
+    // Se hace lo mismo que para key pero con N_value2, que tambien es un int
     int_length = snprintf(NULL, 0, "%d", N_value2);
-    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
+    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +2 por el final de string y la coma de separacion
     if (to_send == NULL) {
         printf("Memory reallocation failed.\n");
         return -1;
@@ -96,35 +103,35 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
 
     int double_length;
     for (int i = 0; i < N_value2; i++){
+        // Se hace lo mismo que con las variables int pero con una double
         double_length = snprintf(NULL, 0, "%f", V_value2[i]);
-        to_send = realloc(to_send, (strlen(to_send) + double_length + 2) * sizeof(char));
-
+        to_send = realloc(to_send, (strlen(to_send) + double_length + 2) * sizeof(char));// +2 por el final de string y la coma de separacion
         if (to_send == NULL) {
             printf("Memory reallocation failed.\n");
             return -1;
         }
         sprintf(to_send + strlen(to_send), "%f,", V_value2[i]);
     }
-    printf("to_send = %s\n", to_send);
-
     size_t str_length = strlen(value1);
-    to_send = realloc(to_send, (strlen(to_send) + str_length + 1) * sizeof(char));
+
+    // Finalmente se reserva y concatena la variable value1
+    to_send = realloc(to_send, (strlen(to_send) + str_length + 1) * sizeof(char));// +1 por el final del string
     if (to_send == NULL) {
         printf("Memory reallocation failed.\n");
         return -1;
     }
     strcat(to_send, value1);
 
-    printf("to_send = %s\n", to_send);
-
+    // Se envía la información al servidor y se libera la memoria
     err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
     if(err == -1){
         printf("Error al enviar value 1\n");
 
     }
-
     free(to_send);
 
+
+    // Se espera la respuesta del servidor
     recv(sd, received, 256, 0);
     if (sscanf(received, "%d", &res) != 1){
         printf("Error al recibir respuesta");
