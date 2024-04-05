@@ -11,7 +11,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-
 #define PORT 4200
 
 int init(){
@@ -140,7 +139,85 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
 
     return res;}
 
+int get_value(int key, char *value1, int *N_value2, double *V_value2) {
+    int res;
+    int sd;
+    struct sockaddr_in server_addr;
+    char received[256];
+    char *to_send = malloc(3 * sizeof(char));
 
+    if (to_send == NULL) {
+        printf("Memory allocation failed.\n");
+        return -1;
+    }
+
+    strcpy(to_send, "3,");
+
+    sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sd < 0){
+        perror("Error in socket");
+        exit(-1);
+    }
+    bzero((char *)&server_addr, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
+    server_addr.sin_port = htons(PORT);
+    int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
+    if (err == -1){
+        printf("Error en connect\n");
+        return -1;
+    }
+    int int_length = snprintf(NULL, 0, "%d", key);
+    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
+    if (to_send == NULL) {
+        printf("Memory reallocation failed.\n");
+        return -1;
+    }
+    sprintf(to_send + strlen(to_send), "%d", key);
+
+    printf("to_send = %s\n", to_send);
+
+    err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
+    if(err == -1){
+        printf("Error al enviar value 1\n");
+
+    }
+
+    printf(" se ha enviado\n");
+
+    free(to_send);
+
+    char message[1807];
+    int err1 = recv(sd, (char *) &message, 1807, 0);   // recibe la operación
+    if (err1 == -1) {
+        printf("Error en recepción de tupla en operacion get_value\n");
+    }
+    
+    printf("tamaño: %d\n",err1);
+    printf("recibido : %s\n",message);
+    if (strcmp(message, "error") != 0){
+        printf("entra\n");
+        char *token;
+        token = strtok(message, ",");
+        *N_value2 = atoi(token);
+        for (int i = 0; i < *N_value2; i++){
+            token = strtok(NULL, ",");
+            V_value2[i] = atof(token);
+        }
+
+        value1 = strtok(NULL, ",");
+    }
+
+    printf("prueba\n");
+    recv(sd, received, 256, 0);
+    if (sscanf(received, "%d", &res) != 1){
+        printf("Error al recibir respuesta");
+        res = -1;
+    }
+    printf("resultado %d\n",res);
+
+    return res;
+}
 
 /*
 int delete_key(int key){
@@ -190,6 +267,10 @@ int delete_key(int key){
 
     return res;
 }
+
+
+
+
 
 int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     mqd_t q_servidor;       // cola de mensajes del proceso servidor

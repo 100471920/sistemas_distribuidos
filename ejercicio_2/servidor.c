@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+#include <unistd.h>
+
 
 int *keys;
 char **valores_1;
@@ -45,7 +47,7 @@ void tratar_mensaje(int  *socket) {
     pthread_mutex_unlock(&mutex_mensaje);
 
 
-    do {
+    while(op != -1) {
         strcpy(resultado, "-1");
         int err = recv(sc, (char *) &message, 1807, 0);   // recibe la operación
         if (err == -1) {
@@ -189,11 +191,9 @@ void tratar_mensaje(int  *socket) {
                     break;
                 }
             }
-
             // Solo se ejecuta si no ha habido errores previamente
-            if (strcmp(resultado, "0")) {
+            if (strcmp(resultado, "0") == 0) {
                 num_data++; // Se añade un dato a la base de datos
-
                 // Hacemos la capacidad de la base de datos más grande
                 keys = temp_keys;
                 valores_1 = temp_valores_1;
@@ -218,7 +218,95 @@ void tratar_mensaje(int  *socket) {
             if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                 pthread_exit(0);
             }
-        }/*
+        }
+        else if (op == 3) {
+            // Función get_value
+            strcpy(resultado, "-1");
+            int key;
+            char* to_send = malloc(1 * sizeof(char)); // Inicialización con malloc
+            if (to_send == NULL) {
+                printf("Memory allocation failed.\n");
+                break;
+            }
+            to_send[0] = '\0';
+
+            token = strtok(NULL, ",");
+            key = atoi(token);
+
+            pthread_mutex_lock(&mutex_shared_variables);
+
+            // Buscar valores en la base de datos
+            for (int i = 0; i < num_data; i++) {
+                if (keys[i] == key) {
+                    // Si se encuentra la clave, copiar los datos al mensaje de respuesta
+                    strcpy(resultado, "0"); // Indicador de éxito
+                    // Se hace lo mismo que para key pero con N_value2, que tambien es un int
+                    int int_length = snprintf(NULL, 0, "%d", num_elements[i]);
+                    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +2 por el final de string y la coma de separacion
+                    if (to_send == NULL) {
+                        printf("Memory reallocation failed.\n");
+                        strcpy(resultado, "-1");
+                        break;
+                    }
+                    sprintf(to_send + strlen(to_send), "%d,", num_elements[i]);
+
+                    printf("%s\n",to_send);
+
+                    int double_length;
+                    for (int j= 0; j < num_elements[i]; j++){
+                        // Se hace lo mismo que con las variables int pero con una double
+                        double_length = snprintf(NULL, 0, "%f", vectores[i][j]);
+                        to_send = realloc(to_send, (strlen(to_send) + double_length + 2) * sizeof(char));// +2 por el final de string y la coma de separacion
+                        if (to_send == NULL) {
+                            printf("Memory reallocation failed.\n");
+                            strcpy(resultado, "-1");
+                            break;
+                        }
+                        sprintf(to_send + strlen(to_send), "%f,", vectores[i][j]);
+                    }
+                    size_t str_length = strlen(valores_1[i]);
+
+                    // Finalmente se reserva y concatena la variable value1
+                    to_send = realloc(to_send, (strlen(to_send) + str_length + 1) * sizeof(char));// +1 por el final del string
+                    if (to_send == NULL) {
+                        printf("Memory reallocation failed.\n");
+                        strcpy(resultado, "-1");
+                        break;
+                    }
+                    strcat(to_send, valores_1[i]);
+                    strcpy(resultado, "0");
+                    break;
+                }
+            }
+            pthread_mutex_unlock(&mutex_shared_variables);
+
+            if (resultado[0] != '0') {
+                printf("Error: No se encontraron los datos correspondientes a la clave\n");
+                strcpy(to_send, "error"); 
+            } 
+
+            printf("to_send %s \n",to_send);
+
+            err = send(sc, (char*) to_send, strlen(to_send) + 1, 0); // Enviar el mensaje a sc
+            if (err == -1) {
+                printf("Error al enviar el mensaje\n");
+            }
+            printf("tamaño: %d\n",err);
+
+            free(to_send); // Liberar la memoria asignada a to_send si se ha construido un mensaje
+            
+            printf("Operación get_value realizada\n");
+            sleep(0.5);
+            // Enviar respuesta resultado al cliente
+            if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            
+
+        }
+
+
+        /*
         else if (mensaje.op == 3) {
             // Funcion get_value
 
@@ -288,11 +376,13 @@ void tratar_mensaje(int  *socket) {
         }
 */
         // Se envía la respuesta al cliente
-        err = send(sc, (char*) message, strlen(message) + 1, 0); // Envia el mensaje a sd
+        printf("resultado envia %s\n",resultado);
+        printf("op de operacion realizada %s\n",message);
+        /*err = send(sc, (char*) message, strlen(message) + 1, 0); // Envia el mensaje a sd
         if(err == -1){
             printf("Error al enviar\n");
-        }
-    } while(op != -1);
+        }*/
+    } 
     pthread_exit(0);
 }
 

@@ -54,7 +54,7 @@ int main() {
                 }
             }
         }
-        /*
+        
         else if (strcmp(peticion, "get_value") == 0){
             printf("Get value\n");
             printf("Indique la clave de la tupla que desea obtener: key = ");
@@ -78,7 +78,7 @@ int main() {
                 }
             }
         }
-
+        /*
         else if (strcmp(peticion, "modify_value") == 0){
             printf("Indique la clave sobre la que se desea hacer modify_value(key, valor_1, num_elements, vector): key = ");
             if ((scanf("%d", &key)) != 1){
