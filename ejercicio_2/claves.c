@@ -143,7 +143,6 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     int res;
     int sd;
     struct sockaddr_in server_addr;
-    char received[256];
     char *to_send = malloc(3 * sizeof(char));
 
     if (to_send == NULL) {
@@ -175,7 +174,6 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     }
     sprintf(to_send + strlen(to_send), "%d", key);
 
-    printf("to_send = %s\n", to_send);
 
     err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
     if(err == -1){
@@ -183,22 +181,21 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
 
     }
 
-    printf(" se ha enviado\n");
-
     free(to_send);
 
     char message[1807];
     int err1 = recv(sd, (char *) &message, 1807, 0);   // recibe la operación
     if (err1 == -1) {
         printf("Error en recepción de tupla en operacion get_value\n");
+        res = -1;
     }
-    
-    printf("tamaño: %d\n",err1);
-    printf("recibido : %s\n",message);
-    if (strcmp(message, "error") != 0){
-        printf("entra\n");
-        char *token;
-        token = strtok(message, ",");
+
+    char *token;
+    token = strtok(message, ",");
+    res = atoi(token);
+
+    if (res >= 0){
+        token = strtok(NULL, ",");
         *N_value2 = atoi(token);
         for (int i = 0; i < *N_value2; i++){
             token = strtok(NULL, ",");
@@ -207,14 +204,6 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
 
         value1 = strtok(NULL, ",");
     }
-
-    printf("prueba\n");
-    recv(sd, received, 256, 0);
-    if (sscanf(received, "%d", &res) != 1){
-        printf("Error al recibir respuesta");
-        res = -1;
-    }
-    printf("resultado %d\n",res);
 
     return res;
 }

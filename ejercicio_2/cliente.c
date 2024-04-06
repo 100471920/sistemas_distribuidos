@@ -60,6 +60,7 @@ int main() {
             printf("Indique la clave de la tupla que desea obtener: key = ");
             if ((scanf("%d", &key)) != 1){
                 printf("[ERROR] La clave introducida no es de tipo int\n");
+                resultado = -1;
             }
             else {
                 resultado = get_value(key, valor_1, &n_elem, vector);
@@ -69,12 +70,16 @@ int main() {
                     printf("Valor1: %s\n", valor_1);
                     printf("Valor2 longitud: %d\n", n_elem);
                     printf("Valor2 vector:\n");
+                    printf("[");
                     for (int i = 0; i < n_elem; i++) {
                         printf("%.2lf ", vector[i]);
+                        if (i != n_elem - 1) {
+                            printf(", ");
+                        }
                     }
-                    printf("\n");
+                    printf("]\n");
                 } else {
-                    printf("[Error] No se pudo obtener la tupla para la clave %d ,compruebe que existe", key);
+                    printf("[Error] No se pudo obtener la tupla para la clave %d ,compruebe que existe\n", key);
                 }
             }
         }
