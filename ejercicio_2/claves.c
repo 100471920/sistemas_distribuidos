@@ -33,6 +33,10 @@ int obtenerDireccionServidor(char **ip, int *puerto)
         return -1;
     }
 
+    if (strcmp(ip_str, "localhost") == 0) {
+        strcpy(ip_str, "127.0.0.1");
+    }
+
     // Asignar los valores obtenidos a las variables de salida
     *ip = ip_str;
     *puerto = port;
