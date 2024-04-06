@@ -208,167 +208,151 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     return res;
 }
 
-/*
+
 int delete_key(int key){
-    mqd_t q_servidor;       // cola de mensajes del proceso servidor
-    mqd_t q_cliente;        // cola de mensajes para el proceso cliente
-    char queue_name[100];
-    sprintf(queue_name, "/Cola-%d", getpid());
-    struct mensaje mess;
-    struct mq_attr attr;
     int res;
+    int sd;
+    char received[256];
+    struct sockaddr_in server_addr;
 
-    attr.mq_maxmsg = 1;
-    attr.mq_msgsize = sizeof(int);
-
-    q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
-    if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente\n");
+    //inicializa el mensaje que se va a enviar
+    char *to_send = malloc(3 * sizeof(char));
+    if (to_send == NULL) {
+        printf("Memory allocation failed.\n");
+        return -1;
     }
-    q_servidor = mq_open("/SERVIDOR", O_WRONLY);
-    if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor\n");
+    strcpy(to_send, "1,");
+
+    // se establece comunicación
+    sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sd < 0){
+        perror("Error in socket");
+        exit(-1);
     }
-
-    // Inicializamos el mensaje
-    mess.op = 1;
-    strcpy(mess.cola_cliente, queue_name);
-    for(int i = 0; i < 32; i++){mess.vector[i] = 0.0;}
-    mess.n_elem = 0;
-    strcpy(mess.valor_1, "");
-    mess.clave = key;
-
-    if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("Error al recibir\n");
+    bzero((char *)&server_addr, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
+    server_addr.sin_port = htons(PORT);
+    int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
+    if (err == -1){
+        printf("Error en connect\n");
         return -1;
     }
 
-
-    if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
-        perror("Error al recibir\n");
+    // se contruye el mensaje
+    int int_length = snprintf(NULL, 0, "%d", key);
+    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
+    if (to_send == NULL) {
+        printf("Memory reallocation failed.\n");
         return -1;
     }
+    sprintf(to_send + strlen(to_send), "%d", key);
 
-    mq_close(q_servidor);
-    mq_close(q_cliente);
-    mq_unlink(queue_name);
+    //se envia el mensaje
+    err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
+    if(err == -1){
+        printf("Error al enviar value 1\n");
 
-
-    return res;
-}
-
-
-
-
-
-int get_value(int key, char *value1, int *N_value2, double *V_value2) {
-    mqd_t q_servidor;       // cola de mensajes del proceso servidor
-    mqd_t q_cliente;        // cola de mensajes para el proceso cliente
-    char queue_name[100];
-    sprintf(queue_name, "/Cola-%d", getpid());
-    struct mensaje mess;
-    struct mq_attr attr;
-
-    attr.mq_maxmsg = 1;
-    attr.mq_msgsize = sizeof(struct mensaje);
-
-    q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
-    if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente\n");
-        return -1;
     }
-    q_servidor = mq_open("/SERVIDOR", O_WRONLY);
-    if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor\n");
-        return -1;
+    free(to_send);
+    // Se espera la respuesta del servidor
+    recv(sd, received, 256, 0);
+    if (sscanf(received, "%d", &res) != 1){
+        printf("Error al recibir respuesta");
+        res = -1;
     }
-
-    // Inicializamos el mensaje
-    mess.op = 3;
-    strcpy(mess.cola_cliente, queue_name);
-    for(int i = 0; i < 32; i++){mess.vector[i] = 0.0;}
-    mess.n_elem = 0;
-    strcpy(mess.valor_1, "");
-    mess.clave = key;
-
-    if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("Error al recibir\n");
-        return -1;
-    }
-
-    if (mq_receive(q_cliente, (char *) &mess, sizeof(struct mensaje), 0) < 0){
-        perror("Error al recibir\n");
-        return -1;
-    }
-
-
-    
-    int res;
-    strcpy(value1, mess.valor_1);
-    *N_value2 = mess.n_elem;
-    for(int i = 0; i < mess.n_elem; i++) {
-        V_value2[i] = mess.vector[i];
-    }
-    res = mess.op;
-
-    mq_close(q_servidor);
-    mq_close(q_cliente);
-    mq_unlink(queue_name);
 
 
     return res;
 }
 
 int modify_value(int key, char *value1, int N_value2, double *V_value2){
-    mqd_t q_servidor;       // cola de mensajes del proceso servidor
-    mqd_t q_cliente;        // cola de mensajes para el proceso cliente
-    char queue_name[100];
-    sprintf(queue_name, "/Cola-%d", getpid());
-    struct mensaje mess;
-    struct mq_attr attr;
     int res;
+    int sd;
+    struct sockaddr_in server_addr;
+    char received[256];
+    char *to_send = malloc(3 * sizeof(char));
 
-    attr.mq_maxmsg = 1;
-    attr.mq_msgsize = sizeof(int);
-
-    q_cliente = mq_open(queue_name, O_CREAT|O_RDONLY, 0700, &attr);
-    if (q_cliente == -1){
-        perror("Error al abrir la cola del cliente\n");
-    }
-    q_servidor = mq_open("/SERVIDOR", O_WRONLY);
-    if (q_servidor == -1){
-        perror("Error al abrir la cola del servidor\n");
-    }
-
-
-    // Inicializamos el mensaje
-    mess.op = 4;
-    strcpy(mess.cola_cliente, queue_name);
-    for(int i = 0; i < N_value2; i++){mess.vector[i] = V_value2[i];}
-    mess.n_elem = N_value2;
-    if(strlen(value1) > 255){return -1;}
-    strcpy(mess.valor_1, value1);
-    mess.clave = key;
-
-    if (mq_send(q_servidor, (const char *)&mess, sizeof(mess), 0) < 0){
-        perror("Error al envíar\n");
+    if (to_send == NULL) {
+        printf("Memory allocation failed.\n");
         return -1;
     }
+    // Se escribe en el buffer to_send el número de operacion
+    strcpy(to_send, "4,");
 
-
-    if (mq_receive(q_cliente, (char *) &res, sizeof(int), 0) < 0){
-        perror("Error al recibir\n");
+    sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sd < 0){
+        perror("Error in socket");
+        exit(-1);
+    }
+    bzero((char *)&server_addr, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
+    server_addr.sin_port = htons(PORT);
+    int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
+    if (err == -1){
+        printf("Error en connect\n");
         return -1;
     }
+    // Se calculan los caracteres de la clave introducida y se reserva espacio para copiarlo en la valiable to_send
+    int int_length = snprintf(NULL, 0, "%d", key);
+    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +2 por el final de string y la coma de separacion
+    if (to_send == NULL) {
+        printf("Memory reallocation failed.\n");
+        return -1;
+    }
+    sprintf(to_send + strlen(to_send), "%d,", key);
 
-    mq_close(q_servidor);
-    mq_close(q_cliente);
-    mq_unlink(queue_name);
+    // Se hace lo mismo que para key pero con N_value2, que tambien es un int
+    int_length = snprintf(NULL, 0, "%d", N_value2);
+    to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +2 por el final de string y la coma de separacion
+    if (to_send == NULL) {
+        printf("Memory reallocation failed.\n");
+        return -1;
+    }
+    sprintf(to_send + strlen(to_send), "%d,", N_value2);
 
+    int double_length;
+    for (int i = 0; i < N_value2; i++){
+        // Se hace lo mismo que con las variables int pero con una double
+        double_length = snprintf(NULL, 0, "%f", V_value2[i]);
+        to_send = realloc(to_send, (strlen(to_send) + double_length + 2) * sizeof(char));// +2 por el final de string y la coma de separacion
+        if (to_send == NULL) {
+            printf("Memory reallocation failed.\n");
+            return -1;
+        }
+        sprintf(to_send + strlen(to_send), "%f,", V_value2[i]);
+    }
+    size_t str_length = strlen(value1);
+
+    // Finalmente se reserva y concatena la variable value1
+    to_send = realloc(to_send, (strlen(to_send) + str_length + 1) * sizeof(char));// +1 por el final del string
+    if (to_send == NULL) {
+        printf("Memory reallocation failed.\n");
+        return -1;
+    }
+    strcat(to_send, value1);
+    printf("Se envia: %s\n", to_send);
+
+    // Se envía la información al servidor y se libera la memoria
+    err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
+    if(err == -1){
+        printf("Error al enviar value 1\n");
+
+    }
+    free(to_send);
+
+
+    // Se espera la respuesta del servidor
+    recv(sd, received, 256, 0);
+    if (sscanf(received, "%d", &res) != 1){
+        printf("Error al recibir respuesta");
+        res = -1;
+    }
 
     return res;
 }
-*/
+
 int exist(int key){
     int res;
     int sd;

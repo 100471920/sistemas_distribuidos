@@ -9,7 +9,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
 #include <unistd.h>
 
 
@@ -46,7 +45,6 @@ void tratar_mensaje(int  *socket) {
 
     pthread_mutex_unlock(&mutex_mensaje);
 
-
     while(op != -1) {
         strcpy(resultado, "-1");
         int err = recv(sc, (char *) &message, 1807, 0);   // recibe la operación
@@ -59,6 +57,7 @@ void tratar_mensaje(int  *socket) {
         // Esto se hace para poder parsear el mensaje recibido.
         token = strtok(message, ",");
         op = atoi(token);
+        printf("op = %d\n", op);
         if (op < 0 || op > 5){
             printf("Error al leer entero");
             op = 1000;
@@ -83,20 +82,26 @@ void tratar_mensaje(int  *socket) {
             if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                 pthread_exit(0);
             }
-        }/*
-        else if (mensaje.op == 1) {
+        }
+
+        else if (op == 1) {
             // Funcion delete_key (leer un parametro)
             int index = -1;
+            int key;
+
+            // Leemos la llave introducida
+            token = strtok(NULL, ",");
+            key = atoi(token);
 
             pthread_mutex_lock(&mutex_shared_variables);
 
             for (int i = 0; i < num_data; i++) {
-                if (keys[i] == mensaje.clave) {
+                if (keys[i] == key) {
                     index = i;
                 }
             }
             if (index == -1) {
-                if (mq_send(q_cliente, (const char *) &index, sizeof(int), 0) < 0) {
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                     pthread_exit(0);
                 }
                 pthread_exit(0);
@@ -117,15 +122,15 @@ void tratar_mensaje(int  *socket) {
             num_elements = realloc(num_elements, num_data * sizeof(int));
             vectores = realloc(vectores, num_data * sizeof(double *));
 
-            resultado = 0;
+            strcpy(resultado, "0");
 
             pthread_mutex_unlock(&mutex_shared_variables);
             printf("Operación delete_key realizada\n");
 
-            if (mq_send(q_cliente, (const char *) &resultado, sizeof(int), 0) < 0) {
+            if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                 pthread_exit(0);
             }
-        }*/
+        }
         else if (op == 2) {
             // set_value (leer mas parametros)
             strcpy(resultado, "0");
@@ -309,60 +314,65 @@ void tratar_mensaje(int  *socket) {
         }
 
 
-        /*
-        else if (mensaje.op == 3) {
-            // Funcion get_value
 
-            pthread_mutex_lock(&mutex_shared_variables);
 
-            // Buscar valores en la base de datos
-            for (int i = 0; i < num_data; i++) {
-                if (keys[i] == mensaje.clave) {
-                    // Si se encuentra la clave, copiar los datos al mensaje de respuesta
-                    resultado = 0; // Indicador de éxito
-                    mensaje.n_elem = num_elements[i];
-                    strcpy(mensaje.valor_1, valores_1[i]);
-                    for (int j = 0; j < mensaje.n_elem; j++) {
-                        mensaje.vector[j] = vectores[i][j];
-                    }
-                    break;
-                }
-            }
-
-            mensaje.op = resultado;
-
-            pthread_mutex_unlock(&mutex_shared_variables);
-            printf("Operación get_value realizada\n");
-
-            // Enviar respuesta al cliente
-            if (mq_send(q_cliente, (const char *) &mensaje, sizeof(mensaje), 0) < 0) {
-                perror("Error al enviar resultado al cliente\n");
-                pthread_exit(0);
-            }
-        } else if (mensaje.op == 4) {
+        else if (op == 4) {
             // Función modify_value
+            // La lectura de parámetros es idéntica a set_value
+            int key;
+            char *value_1;
+            int n_elem;
+            double vector[32];
 
-            pthread_mutex_lock(&mutex_shared_variables);
 
-            for (int i = 0; i < num_data; i++) {
-                if (mensaje.clave == keys[i]) {
-                    valores_1[i] = realloc(valores_1[i], sizeof(mensaje.valor_1) * sizeof(char));
-                    strcpy(valores_1[i], mensaje.valor_1);
-                    if (mensaje.n_elem != num_elements[i]) {
-                        num_elements[i] = mensaje.n_elem;
-                        vectores[i] = realloc(vectores[i], sizeof(mensaje.n_elem) * sizeof(double));
+            // Cada vez que se hace strtok() se pasa a otro valor de entrada, por lo que se van almacenando los valores
+            // en variables intermedias
+            token = strtok(NULL, ",");
+            key = atoi(token);
+            token = strtok(NULL, ",");
+            n_elem = atoi(token);
+            if ((n_elem > 32) | (n_elem < 1)) {
+                strcpy(resultado, "-1");
+            }
+
+            else {
+                for (int i = 0; i < n_elem; i++) {
+                    token = strtok(NULL, ",");
+                    vector[i] = atof(token);
+                }
+
+                value_1 = strtok(NULL, ",");
+
+                pthread_mutex_lock(&mutex_shared_variables);
+
+                for (int i = 0; i < num_data; i++) {
+                    if (key == keys[i]) {
+                        free(valores_1[i]);
+
+                        valores_1[i] = malloc((strlen(value_1) + 1) * sizeof(char));
+
+                        strcpy(valores_1[i], value_1);
+                        if (n_elem != num_elements[i]) {
+                            num_elements[i] = n_elem;
+                            free(vectores[i]);
+                            vectores[i] = malloc(n_elem * sizeof(double));
+                        }
+                        for (int j = 0; j < n_elem; j++) {
+                            vectores[i][j] = vector[j];
+                        }
+                        strcpy(resultado, "0");
+                        break;
                     }
-                    for (int j = 0; j < mensaje.n_elem; j++) {
-                        vectores[i][j] = mensaje.vector[j];
-                    }
-                    resultado = 0;
-                    break;
+                }
+
+                pthread_mutex_unlock(&mutex_shared_variables);
+                printf("Operación modify_value realizada\n");
+                if (send(sc, (char *) resultado, strlen(resultado) + 1, 0) < 0) {
+                    pthread_exit(0);
                 }
             }
-            pthread_mutex_unlock(&mutex_shared_variables);
-            printf("Operación modify_value realizada\n");
-        
-        }*/ else if (op == 5) {
+        }
+        else if (op == 5) {
             // función exist
             int key;
             char* to_send = malloc(1 * sizeof(char)); // Inicialización con malloc
@@ -378,7 +388,7 @@ void tratar_mensaje(int  *socket) {
             strcpy(resultado, "0");
             pthread_mutex_lock(&mutex_shared_variables);
 
-            for (int i; i < num_data; i++) {
+            for (int i = 0; i < num_data; i++) {
                 if (keys[i] == key) {
                     strcpy(resultado, "1");
                     break;
@@ -396,12 +406,11 @@ void tratar_mensaje(int  *socket) {
         // Se envía la respuesta al cliente
         printf("resultado = %s\n",resultado);
         printf("id de operacion realizada = %s\n",message);
-        /*err = send(sc, (char*) message, strlen(message) + 1, 0); // Envia el mensaje a sd
-        if(err == -1){
-            printf("Error al enviar\n");
-        }*/
+
     } 
+
     pthread_exit(0);
+
 }
 
 
