@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Werror -fPIC
-LDFLAGS = -L. -lclaves
+LDFLAGS = -L. -lclaves -pthread
 
 all: servidor cliente
 
