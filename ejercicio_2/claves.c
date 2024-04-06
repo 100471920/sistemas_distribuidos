@@ -63,7 +63,7 @@ int init(){
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    //server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
+    //establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
         perror("Error al convertir la dirección IP\n");
