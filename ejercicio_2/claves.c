@@ -11,7 +11,33 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+#include <unistd.h> 
 #define PORT 4200
+
+int obtenerDireccionServidor(char **ip, int *puerto)
+{
+    char* ip_str = getenv("IP_TUPLAS");
+    char* port_str = getenv("PORT_TUPLAS");
+    if (ip_str == NULL){
+    printf("ERROR en variable de entorno IP_TUPLAS\n");
+    return -1;
+    } else if(port_str == NULL){
+    printf("ERROR en variable de entorno PORT_TUPLAS\n");
+    return -1;
+    }
+
+    // Convertir la cadena del puerto a entero
+    int port = atoi(port_str);
+    if (port <= 0 || port > 65535) {
+        fprintf(stderr, "Error: Puerto inválido.\n");
+        return -1;
+    }
+
+    // Asignar los valores obtenidos a las variables de salida
+    *ip = ip_str;
+    *puerto = port;
+    return 0;
+}
 
 int init(){
     int sd;
@@ -19,18 +45,33 @@ int init(){
     int res;
     char received[256];
     char to_send[256];
+    // Variables para almacenar la dirección IP y el puerto del servidor de tuplas
+    char* ip_servidor;
+    int puerto_servidor;
+
+    if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
+        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        return -1;
+    }
 
     // Se copia el código de operación
     strcpy(to_send, "0");
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd < 0){
-        perror("Error in socket");
+        perror("Error in socket\n");
         exit(-1);
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
-    server_addr.sin_port = htons(PORT);
+    //server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
+    server_addr.sin_port = htons(puerto_servidor);
+    if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
+        perror("Error al convertir la dirección IP\n");
+        printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
+        close(sd);
+        return -1;
+    }
+
     int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
     if (err == -1){
         printf("Error en connect\n");
@@ -60,6 +101,14 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     struct sockaddr_in server_addr;
     char received[256];
     char *to_send = malloc(3 * sizeof(char));
+    // Variables para almacenar la dirección IP y el puerto del servidor de tuplas
+    char* ip_servidor;
+    int puerto_servidor;
+
+    if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
+        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        return -1;
+    }
 
     if (to_send == NULL) {
         printf("Memory allocation failed.\n");
@@ -75,8 +124,15 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
-    server_addr.sin_port = htons(PORT);
+    //establecer el puerto e ip del servidor
+    server_addr.sin_port = htons(puerto_servidor);
+    if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
+        perror("Error al convertir la dirección IP\n");
+        printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
+        close(sd);
+        return -1;
+    }
+
     int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
     if (err == -1){
         printf("Error en connect\n");
@@ -140,10 +196,17 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     return res;}
 
 int get_value(int key, char *value1, int *N_value2, double *V_value2) {
-
     int res;
     int sd;
     struct sockaddr_in server_addr;
+    // Variables para almacenar la dirección IP y el puerto del servidor de tuplas
+    char* ip_servidor;
+    int puerto_servidor;
+
+    if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
+        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        return -1;
+    }
 
     //inicializa el mensaje que se va a enviar
     char *to_send = malloc(3 * sizeof(char));
@@ -161,8 +224,16 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
-    server_addr.sin_port = htons(PORT);
+    //establecer el puerto e ip del servidor
+    server_addr.sin_port = htons(puerto_servidor);
+    if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
+        perror("Error al convertir la dirección IP\n");
+        printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
+        close(sd);
+        return -1;
+    }
+
+
     int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
     if (err == -1){
         printf("Error en connect\n");
@@ -218,6 +289,14 @@ int delete_key(int key){
     int sd;
     char received[256];
     struct sockaddr_in server_addr;
+    // Variables para almacenar la dirección IP y el puerto del servidor de tuplas
+    char* ip_servidor;
+    int puerto_servidor;
+
+    if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
+        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        return -1;
+    }
 
     //inicializa el mensaje que se va a enviar
     char *to_send = malloc(3 * sizeof(char));
@@ -235,8 +314,16 @@ int delete_key(int key){
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
-    server_addr.sin_port = htons(PORT);
+    //establecer el puerto e ip del servidor
+    server_addr.sin_port = htons(puerto_servidor);
+    if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
+        perror("Error al convertir la dirección IP\n");
+        printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
+        close(sd);
+        return -1;
+    }
+
+
     int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
     if (err == -1){
         printf("Error en connect\n");
@@ -276,6 +363,14 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2){
     struct sockaddr_in server_addr;
     char received[256];
     char *to_send = malloc(3 * sizeof(char));
+    // Variables para almacenar la dirección IP y el puerto del servidor de tuplas
+    char* ip_servidor;
+    int puerto_servidor;
+
+    if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
+        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        return -1;
+    }
 
     if (to_send == NULL) {
         printf("Memory allocation failed.\n");
@@ -291,8 +386,16 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2){
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
-    server_addr.sin_port = htons(PORT);
+    //establecer el puerto e ip del servidor
+    server_addr.sin_port = htons(puerto_servidor);
+    if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
+        perror("Error al convertir la dirección IP\n");
+        printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
+        close(sd);
+        return -1;
+    }
+
+
     int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
     if (err == -1){
         printf("Error en connect\n");
@@ -336,7 +439,6 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2){
         return -1;
     }
     strcat(to_send, value1);
-    printf("Se envia: %s\n", to_send);
 
     // Se envía la información al servidor y se libera la memoria
     err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
@@ -362,6 +464,14 @@ int exist(int key){
     int sd;
     struct sockaddr_in server_addr;
     char received[256];
+    // Variables para almacenar la dirección IP y el puerto del servidor de tuplas
+    char* ip_servidor;
+    int puerto_servidor;
+
+    if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
+        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        return -1;
+    }
 
     //inicializa el mensaje
     char *to_send = malloc(3 * sizeof(char));
@@ -379,8 +489,16 @@ int exist(int key){
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Use localhost (127.0.0.1)
-    server_addr.sin_port = htons(PORT);
+    //establecer el puerto e ip del servidor
+    server_addr.sin_port = htons(puerto_servidor);
+    if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
+        perror("Error al convertir la dirección IP\n");
+        printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
+        close(sd);
+        return -1;
+    }
+
+
     int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
     if (err == -1){
         printf("Error en connect\n");

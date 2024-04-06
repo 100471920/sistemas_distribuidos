@@ -60,7 +60,7 @@ void tratar_mensaje(int  *socket) {
         // Esto se hace para poder parsear el mensaje recibido.
         token = strtok(message, ",");
         op = atoi(token);
-        
+
         if (op < 0 || op > 5){
             printf("Error al leer entero");
             op = 1000;
@@ -417,7 +417,14 @@ void tratar_mensaje(int  *socket) {
 
 
 
-int main(){
+int main(int argc, char *argv[]){
+    if (argc != 2) {
+        printf("Uso: %s <puerto>\n", argv[0]);
+        return 1;
+    }
+
+    int puerto = atoi(argv[1]);
+
     pthread_attr_t t_attr;		// atributos de los threads
     pthread_t thid;
     struct sockaddr_in server_addr, client_addr;
@@ -440,7 +447,7 @@ int main(){
     bzero((char *) &server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(4200);
+    server_addr.sin_port = htons(puerto);
 
     err = bind(sd, (const struct sockaddr *) &server_addr,
                sizeof(server_addr));
