@@ -424,6 +424,16 @@ int main(int argc, char *argv[]){
     }
 
     int puerto = atoi(argv[1]);
+    // Verificar si el puerto es 0 (significa que no era un número entero válido)
+    if (puerto == 0 && argv[1][0] != '0') {
+        printf("El puerto debe ser un número entero válido.\n");
+        return 1;
+    }
+    // Verificar si el puerto está dentro del rango válido (0-65535)
+    if (puerto < 0 || puerto > 65535) {
+        printf("El puerto debe estar en el rango de 0 a 65535.\n");
+        return 1;
+    }
 
     pthread_attr_t t_attr;		// atributos de los threads
     pthread_t thid;
