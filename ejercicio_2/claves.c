@@ -140,18 +140,20 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     return res;}
 
 int get_value(int key, char *value1, int *N_value2, double *V_value2) {
+
     int res;
     int sd;
     struct sockaddr_in server_addr;
-    char *to_send = malloc(3 * sizeof(char));
 
+    //inicializa el mensaje que se va a enviar
+    char *to_send = malloc(3 * sizeof(char));
     if (to_send == NULL) {
         printf("Memory allocation failed.\n");
         return -1;
     }
-
     strcpy(to_send, "3,");
 
+    // se establece comunicación
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd < 0){
         perror("Error in socket");
@@ -166,6 +168,8 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
         printf("Error en connect\n");
         return -1;
     }
+
+    // se contruye el mensaje
     int int_length = snprintf(NULL, 0, "%d", key);
     to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
     if (to_send == NULL) {
@@ -174,15 +178,15 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     }
     sprintf(to_send + strlen(to_send), "%d", key);
 
-
+    //se envia el mensaje
     err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
     if(err == -1){
         printf("Error al enviar value 1\n");
 
     }
-
     free(to_send);
 
+    //se recive el resultado
     char message[1807];
     int err1 = recv(sd, (char *) &message, 1807, 0);   // recibe la operación
     if (err1 == -1) {
@@ -194,6 +198,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     token = strtok(message, ",");
     res = atoi(token);
 
+    //si el resultado es correcto se obtienen todos los datos
     if (res >= 0){
         token = strtok(NULL, ",");
         *N_value2 = atoi(token);
@@ -201,7 +206,6 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
             token = strtok(NULL, ",");
             V_value2[i] = atof(token);
         }
-
         value1 = strtok(NULL, ",");
     }
 
@@ -357,16 +361,17 @@ int exist(int key){
     int res;
     int sd;
     struct sockaddr_in server_addr;
-    char *to_send = malloc(3 * sizeof(char));
     char received[256];
 
+    //inicializa el mensaje
+    char *to_send = malloc(3 * sizeof(char));
     if (to_send == NULL) {
         printf("Memory allocation failed.\n");
         return -1;
     }
-
     strcpy(to_send, "5,");
 
+    // se establece la comunicación
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd < 0){
         perror("Error in socket");
@@ -381,6 +386,8 @@ int exist(int key){
         printf("Error en connect\n");
         return -1;
     }
+
+    //constuir el mensaje
     int int_length = snprintf(NULL, 0, "%d", key);
     to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
     if (to_send == NULL) {
@@ -389,13 +396,12 @@ int exist(int key){
     }
     sprintf(to_send + strlen(to_send), "%d", key);
 
-
+    //enviar el mensaje
     err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
     if(err == -1){
         printf("Error al enviar value 1\n");
 
     }
-
     free(to_send);
 
     // Se espera la respuesta del servidor
