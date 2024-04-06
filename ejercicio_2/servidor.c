@@ -361,23 +361,38 @@ void tratar_mensaje(int  *socket) {
             }
             pthread_mutex_unlock(&mutex_shared_variables);
             printf("Operación modify_value realizada\n");
-
-        } else if (mensaje.op == 5) {
+        
+        }*/ else if (op == 5) {
             // función exist
-            resultado = 0;
+            int key;
+            char* to_send = malloc(1 * sizeof(char)); // Inicialización con malloc
+            if (to_send == NULL) {
+                printf("Memory allocation failed.\n");
+                break;
+            }
+            to_send[0] = '\0';
+
+            token = strtok(NULL, ",");
+            key = atoi(token);
+
+            strcpy(resultado, "0");
             pthread_mutex_lock(&mutex_shared_variables);
 
             for (int i; i < num_data; i++) {
-                if (keys[i] == mensaje.clave) {
-                    resultado = 1;
+                if (keys[i] == key) {
+                    strcpy(resultado, "1");
                     break;
                 }
             }
             pthread_mutex_unlock(&mutex_shared_variables);
             printf("Operación exist realizada\n");
+            // Enviar respuesta al cliente
+            if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
 
         }
-*/
+
         // Se envía la respuesta al cliente
         printf("resultado = %s\n",resultado);
         printf("id de operacion realizada = %s\n",message);

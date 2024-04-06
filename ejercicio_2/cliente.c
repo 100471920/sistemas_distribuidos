@@ -120,7 +120,7 @@ int main() {
                 perror("[ERROR] La clave introducida no es de tipo int\n");
             }
         }
-
+        */
         else if (strcmp(peticion, "exist") == 0){
             printf("Indique la clave sobre la que se desea hacer exist(key): key = ");
             if ((scanf("%d", &key)) == 1){
@@ -130,7 +130,7 @@ int main() {
                 perror("[ERROR] La clave introducida no es de tipo int\n");
             }
         }
-*/
+
         else {
             resultado = -1;
             printf("[ERROR] Operación no reconocida\n");

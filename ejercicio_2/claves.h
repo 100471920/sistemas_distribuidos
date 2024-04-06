@@ -98,7 +98,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2);
  * @retval 0 en caso de que no exista.
  * @retval -1 en caso de error.
  */
-//int exist(int key);
+int exist(int key);
 
 
 //int exit_f();
