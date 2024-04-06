@@ -70,7 +70,7 @@ int init(){
     //establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
-        perror("Error al convertir la dirección IP\n");
+        printf("Error al convertir la dirección IP\n");
         printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
         close(sd);
         return -1;
@@ -131,7 +131,7 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     //establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
-        perror("Error al convertir la dirección IP\n");
+        printf("Error al convertir la dirección IP\n");
         printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
         close(sd);
         return -1;
@@ -231,7 +231,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     //establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
-        perror("Error al convertir la dirección IP\n");
+        printf("Error al convertir la dirección IP\n");
         printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
         close(sd);
         return -1;
@@ -321,7 +321,7 @@ int delete_key(int key){
     //establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
-        perror("Error al convertir la dirección IP\n");
+        printf("Error al convertir la dirección IP\n");
         printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
         close(sd);
         return -1;
@@ -393,7 +393,7 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2){
     //establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
-        perror("Error al convertir la dirección IP\n");
+        printf("Error al convertir la dirección IP\n");
         printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
         close(sd);
         return -1;
@@ -496,7 +496,7 @@ int exist(int key){
     //establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
-        perror("Error al convertir la dirección IP\n");
+        printf("Error al convertir la dirección IP\n");
         printf("Dirección IP del servidor recivida: %s\n (si localhost no funciona prueba con 127.0.0.1)\n", ip_servidor);
         close(sd);
         return -1;
