@@ -51,13 +51,16 @@ void tratar_mensaje(int  *socket) {
         if (err == -1) {
             printf("Error en recepción\n");
             continue;
+        } else if(err == 0){
+            break;
         }
+
         // Esta función cambia en message "," por "\0" e internamente sabe en que \0 se encuentra,
         // por lo que luego se puede llamar a la misma funcion con NULL y seguirá en el mismo estado.
         // Esto se hace para poder parsear el mensaje recibido.
         token = strtok(message, ",");
         op = atoi(token);
-        printf("op = %d\n", op);
+        
         if (op < 0 || op > 5){
             printf("Error al leer entero");
             op = 1000;
@@ -405,13 +408,7 @@ void tratar_mensaje(int  *socket) {
             if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                 pthread_exit(0);
             }
-
         }
-
-        // Se envía la respuesta al cliente
-        printf("resultado = %s\n",resultado);
-        printf("id de operacion realizada = %s\n",message);
-
     } 
 
     pthread_exit(0);
