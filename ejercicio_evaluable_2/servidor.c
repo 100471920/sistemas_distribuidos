@@ -457,7 +457,7 @@ int main(int argc, char *argv[]){
     err = bind(sd, (const struct sockaddr *) &server_addr,
                sizeof(server_addr));
     if (err == -1) {
-        printf("Error en bind\n");
+        printf("Error en bind, revisa que otro programa no este ocupando el puerto selecionado\n");
         exit(-1);
     }
 
