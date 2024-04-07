@@ -309,7 +309,7 @@ int delete_key(int key){
         return -1;
     }
     strcpy(to_send, "1,");
-
+    
     // se establece comunicación
     sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sd < 0){
@@ -326,7 +326,6 @@ int delete_key(int key){
         close(sd);
         return -1;
     }
-
 
     int err = connect(sd, (struct sockaddr *) &server_addr,  sizeof(server_addr)); // Se concta a sd el server_addr
     if (err == -1){
@@ -356,7 +355,6 @@ int delete_key(int key){
         printf("Error al recibir respuesta");
         res = -1;
     }
-
 
     return res;
 }

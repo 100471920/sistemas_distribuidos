@@ -54,13 +54,11 @@ void tratar_mensaje(int  *socket) {
         } else if(err == 0){
             break;
         }
-
         // Esta función cambia en message "," por "\0" e internamente sabe en que \0 se encuentra,
         // por lo que luego se puede llamar a la misma funcion con NULL y seguirá en el mismo estado.
         // Esto se hace para poder parsear el mensaje recibido.
         token = strtok(message, ",");
         op = atoi(token);
-
         if (op < 0 || op > 5){
             printf("Error al leer entero");
             op = 1000;
@@ -95,9 +93,7 @@ void tratar_mensaje(int  *socket) {
             // Leemos la llave introducida
             token = strtok(NULL, ",");
             key = atoi(token);
-
             pthread_mutex_lock(&mutex_shared_variables);
-
             for (int i = 0; i < num_data; i++) {
                 if (keys[i] == key) {
                     index = i;
@@ -105,8 +101,10 @@ void tratar_mensaje(int  *socket) {
             }
             if (index == -1) {
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                    pthread_mutex_unlock(&mutex_shared_variables);
                     pthread_exit(0);
                 }
+                pthread_mutex_unlock(&mutex_shared_variables);
                 pthread_exit(0);
             }
             free(valores_1[index]);
@@ -126,7 +124,6 @@ void tratar_mensaje(int  *socket) {
             vectores = realloc(vectores, num_data * sizeof(double *));
 
             strcpy(resultado, "0");
-
             pthread_mutex_unlock(&mutex_shared_variables);
             printf("Operación delete_key realizada\n");
 
@@ -297,9 +294,7 @@ void tratar_mensaje(int  *socket) {
             pthread_mutex_unlock(&mutex_shared_variables);
 
             //si el resultado es correcto se modifica antes de enviar
-            if (strcmp(resultado, "0") != 0) {
-                printf("Error: No se encontraron los datos correspondientes a la clave %d\n",key);
-            } else{
+            if (strcmp(resultado, "0") == 0) {
                 // Cambiar los 2 primeros caracteres por lo de un resultado valido
                 memcpy(to_send, "00", 2);
             } 
