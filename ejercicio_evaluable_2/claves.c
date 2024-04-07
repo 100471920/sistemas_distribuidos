@@ -1,18 +1,10 @@
-//
-// Created by rubenubuntu on 28/02/24.
-//
-#include <pthread.h>
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
-#include "mensaje.h"
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
 #include <unistd.h> 
-#define PORT 4200
 
 int obtenerDireccionServidor(char **ip, int *puerto)
 {
@@ -29,7 +21,7 @@ int obtenerDireccionServidor(char **ip, int *puerto)
     // Convertir la cadena del puerto a entero
     int port = atoi(port_str);
     if (port <= 0 || port > 65535) {
-        fprintf(stderr, "Error: Puerto inválido.\n");
+        printf( "Error: Puerto inválido.\n");
         return -1;
     }
 
@@ -54,7 +46,7 @@ int init(){
     int puerto_servidor;
 
     if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
-        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        printf("No se pudieron obtener la dirección IP y el puerto del servidor.\n");
         return -1;
     }
 
@@ -110,7 +102,7 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     int puerto_servidor;
 
     if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
-        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        printf("No se pudieron obtener la dirección IP y el puerto del servidor.\n");
         return -1;
     }
 
@@ -128,7 +120,7 @@ int set_value(int key, char *value1, int N_value2, double *V_value2){
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    //establecer el puerto e ip del servidor
+    // Establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
         printf("Error al convertir la dirección IP\n");
@@ -208,7 +200,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     int puerto_servidor;
 
     if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
-        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        printf("No se pudieron obtener la dirección IP y el puerto del servidor.\n");
         return -1;
     }
 
@@ -228,7 +220,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     }
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    //establecer el puerto e ip del servidor
+    // Establecer el puerto e ip del servidor
     server_addr.sin_port = htons(puerto_servidor);
     if (inet_pton(AF_INET, ip_servidor, &server_addr.sin_addr) <= 0) {
         printf("Error al convertir la dirección IP\n");
@@ -244,7 +236,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
         return -1;
     }
 
-    // se contruye el mensaje
+    // Se contruye el mensaje
     int int_length = snprintf(NULL, 0, "%d", key);
     to_send = realloc(to_send, (strlen(to_send) + int_length + 2) * sizeof(char)); // +1 for the null terminator
     if (to_send == NULL) {
@@ -253,7 +245,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     }
     sprintf(to_send + strlen(to_send), "%d", key);
 
-    //se envia el mensaje
+    // Se envia el mensaje
     err = send(sd, (char*) to_send, strlen(to_send) + 1, 0); // Envia el mensaje a sd
     if(err == -1){
         printf("Error al enviar value 1\n");
@@ -261,19 +253,19 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2) {
     }
     free(to_send);
 
-    //se recive el resultado
+    // Se recive el resultado
     char message[1807];
     int err1 = recv(sd, (char *) &message, 1807, 0);   // recibe la operación
     if (err1 == -1) {
         printf("Error en recepción de tupla en operacion get_value\n");
-        res = -1;
+        return -1;
     }
 
     char *token;
     token = strtok(message, ",");
     res = atoi(token);
 
-    //si el resultado es correcto se obtienen todos los datos
+    // Si el resultado es correcto se obtienen todos los datos
     if (res >= 0){
         token = strtok(NULL, ",");
         *N_value2 = atoi(token);
@@ -298,7 +290,7 @@ int delete_key(int key){
     int puerto_servidor;
 
     if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
-        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        printf("No se pudieron obtener la dirección IP y el puerto del servidor.\n");
         return -1;
     }
 
@@ -370,7 +362,7 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2){
     int puerto_servidor;
 
     if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
-        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        printf("No se pudieron obtener la dirección IP y el puerto del servidor.\n");
         return -1;
     }
 
@@ -471,7 +463,7 @@ int exist(int key){
     int puerto_servidor;
 
     if (obtenerDireccionServidor(&ip_servidor, &puerto_servidor) == -1) {
-        fprintf(stderr, "No se pudieron obtener la dirección IP y el puerto del servidor.\n");
+        printf("No se pudieron obtener la dirección IP y el puerto del servidor.\n");
         return -1;
     }
 

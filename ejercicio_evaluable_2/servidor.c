@@ -7,9 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <unistd.h>
 
 
 int *keys;
@@ -110,6 +108,7 @@ void tratar_mensaje(int  *socket) {
             free(valores_1[index]);
             free(vectores[index]);
 
+            // Se recoloca la base de datos para que no se queden espacios intermedios
             for (int i = index; i < num_data - 1; i++) {
                 keys[i] = keys[i + 1];
                 valores_1[i] = valores_1[i + 1];
@@ -118,6 +117,7 @@ void tratar_mensaje(int  *socket) {
             }
             num_data--;
 
+            // Se relocaliza para ocupar el tamaño justo en memoria
             keys = realloc(keys, num_data * sizeof(int));
             valores_1 = realloc(valores_1, num_data * sizeof(char *));
             num_elements = realloc(num_elements, num_data * sizeof(int));

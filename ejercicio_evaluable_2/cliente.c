@@ -1,11 +1,9 @@
-//
-// Created by rubenubuntu on 11/03/24.
-//
+
 #include <string.h>
 #include <stdio.h>
-#include "mensaje.h"
 #include "claves.h"
 
+#define MAXSIZE	256
 
 void limpiarBuffer() {
     int c;
@@ -18,16 +16,18 @@ int main() {
 
     while(1) {
         printf("Indique la operación a realizar: ");
+        // El usuario introduce por terminal la operación
         scanf("%s", peticion);
         int key;
         char valor_1[MAXSIZE];
         int n_elem;
         double vector[32];
 
+
+        // Dependiendo de la operación, se piden más parámertos o no
         if (strcmp(peticion,"init") == 0) {
             resultado = init();
         }
-
         else if (strcmp(peticion, "set_value") == 0){
             printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): key = ");
             if ((scanf("%d", &key)) != 1){
@@ -136,6 +136,8 @@ int main() {
             printf("[ERROR] Operación no reconocida\n");
         }
         printf("Resultado = %d\n", resultado);
+
+        // Para evitar que se lea culquier carater que se pueda quedar en el buffer y afectar operaciones futuras
         limpiarBuffer();
     }
 }
