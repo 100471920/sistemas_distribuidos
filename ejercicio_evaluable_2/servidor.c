@@ -454,8 +454,7 @@ int main(int argc, char *argv[]){
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(puerto);
 
-    err = bind(sd, (const struct sockaddr *) &server_addr,
-               sizeof(server_addr));
+    err = bind(sd, (const struct sockaddr *) &server_addr,sizeof(server_addr));
     if (err == -1) {
         printf("Error en bind, revisa que otro programa no este ocupando el puerto selecionado\n");
         exit(-1);
