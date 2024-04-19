@@ -8,7 +8,7 @@
 
 
 void
-innit_prog_1(char *host)
+innit(char *host)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -35,7 +35,7 @@ innit_prog_1(char *host)
 
 
 void
-set_value_prog_2(char *host)
+set_value(char *host, int key, char* val_1, int n_elem, double* vector)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -50,28 +50,15 @@ set_value_prog_2(char *host)
 	}
 #endif	/* DEBUG */
 
-    printf("Indique la clave sobre la que se desea hacer set_value(key, valor_1, num_elements, vector): key = ");
-    if ((scanf("%d", &set_value_2_arg.key)) != 1){
-        perror("[ERROR] El valor de key debe ser un int\n");
+    set_value_2_arg.key = key;
+    set_value_2_arg.val_1 = (char*)malloc(sizeof (val_1)* sizeof(char));
+    strcpy(set_value_2_arg.val_1, val_1);
+    set_value_2_arg.vector.vector_val = (double*)malloc(n_elem * sizeof(double));
+    set_value_2_arg.vector.vector_len = n_elem;
+    for (int i = 0; i < set_value_2_arg.vector.vector_len; i++) {
+        set_value_2_arg.vector.vector_val[i] = vector[i];
     }
-    else {
-        printf("Indique el valor 1 para set_value(key, valor_1, num_elements, vector): valor_1 = ");
-        set_value_2_arg.val_1 = (char*)malloc(256 * sizeof(char));
-        scanf("%s", set_value_2_arg.val_1);
-        printf("Indique el numero de elementos de valor 2 para set_value(key, valor_1, num_elements, vector): num_elements = ");
-        if ((scanf("%d", &set_value_2_arg.vector.vector_len)) != 1){
-            perror("[ERROR] El valor de num_elements debe ser un int\n");
-        }  else {
-            set_value_2_arg.vector.vector_val = (double*)malloc(set_value_2_arg.vector.vector_len * sizeof(double));
-            for (int i = 0; i < set_value_2_arg.vector.vector_len; i++) {
-                printf("Indique el elemento para set_value(key, valor_1, num_elements, vector): vector[%d] = ",i);
-                if ((scanf("%lf", &set_value_2_arg.vector.vector_val[i])) != 1) {
-                    perror("[ERROR] El valor de los elementos del vector debe ser un double\n");
-                    break;
-                }
-            }
-        }
-    }
+
     retval_1 = set_value_2(&set_value_2_arg, &result_1, clnt);
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
@@ -84,7 +71,7 @@ set_value_prog_2(char *host)
 
 
 void
-get_value_prog_3(char *host)
+get_value(char *host, int key)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -99,16 +86,9 @@ get_value_prog_3(char *host)
 	}
 #endif	/* DEBUG */
 
-    printf("Indique la clave sobre la que se desea hacer get_value(key): key = ");
-    if ((scanf("%d", &get_value_3_arg)) != 1){
-        perror("[ERROR] El valor de key debe ser un int\n");
-        exit(-1);
-    }
-
+    get_value_3_arg = key;
     result_1.val_1 = (char *)malloc(256 * sizeof(char));
-
     result_1.vector.vector_val = (double *)malloc(32 * sizeof(double));
-
     retval_1 = get_value_3(&get_value_3_arg, &result_1, clnt);
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
@@ -129,7 +109,7 @@ get_value_prog_3(char *host)
 
 
 void
-modify_value_prog_4(char *host)
+modify_value(char *host, int key, char* val_1, int n_elem, double* vector)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -144,27 +124,15 @@ modify_value_prog_4(char *host)
 	}
 #endif	/* DEBUG */
 
-    printf("Indique la clave sobre la que se desea hacer modify_value(key, valor_1, num_elements, vector): key = ");
-    if ((scanf("%d", &modify_value_4_arg.key)) != 1){
-        perror("[ERROR] El valor de key debe ser un int\n");
-    } else {
-        printf("Indique el valor 1 para modify_value(key, valor_1, num_elements, vector): valor_1 = ");
-        modify_value_4_arg.val_1 = (char*)malloc(256 * sizeof(char));
-        scanf("%s", modify_value_4_arg.val_1);
-        printf("Indique el numero de elementos de valor 2 para modify_value(key, valor_1, num_elements, vector): num_elements = ");
-        if ((scanf("%d", &modify_value_4_arg.vector.vector_len)) != 1){
-            perror("[ERROR] El valor de num_elements debe ser un int\n");
-        }  else {
-            modify_value_4_arg.vector.vector_val = (double*)malloc(modify_value_4_arg.vector.vector_len * sizeof(double));
-            for (int i = 0; i < modify_value_4_arg.vector.vector_len; i++) {
-                printf("Indique el elemento para modify_value(key, valor_1, num_elements, vector): vector[%d] = ",i);
-                if ((scanf("%lf", &modify_value_4_arg.vector.vector_val[i])) != 1) {
-                    perror("[ERROR] El valor de los elementos del vector debe ser un double\n");
-                    break;
-                }
-            }
-        }
+    modify_value_4_arg.key = key;
+    modify_value_4_arg.val_1 = (char*)malloc(sizeof (val_1)* sizeof(char));
+    strcpy(modify_value_4_arg.val_1, val_1);
+    modify_value_4_arg.vector.vector_val = (double*)malloc(n_elem * sizeof(double));
+    modify_value_4_arg.vector.vector_len = n_elem;
+    for (int i = 0; i < modify_value_4_arg.vector.vector_len; i++) {
+        modify_value_4_arg.vector.vector_val[i] = vector[i];
     }
+
     retval_1 = modify_value_4(&modify_value_4_arg, &result_1, clnt);
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
@@ -178,7 +146,7 @@ modify_value_prog_4(char *host)
 
 
 void
-delete_key_prog_5(char *host)
+delete_key(char *host, int key)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -193,11 +161,8 @@ delete_key_prog_5(char *host)
 	}
 #endif	/* DEBUG */
 
-    printf("Indique la clave sobre la que se desea hacer get_value(key): key = ");
-    if ((scanf("%d", &delete_key_5_arg)) != 1){
-        perror("[ERROR] El valor de key debe ser un int\n");
-        exit(-1);
-    }
+
+    delete_key_5_arg = key;
 	retval_1 = delete_key_5(&delete_key_5_arg, &result_1, clnt);
 	if (retval_1 != RPC_SUCCESS) {
 		clnt_perror (clnt, "call failed");
@@ -211,7 +176,7 @@ delete_key_prog_5(char *host)
 
 
 void
-exist_prog_6(char *host)
+exist(char *host, int key)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -225,11 +190,7 @@ exist_prog_6(char *host)
 		exit (1);
 	}
 #endif	/* DEBUG */
-    printf("Indique la clave sobre la que se desea hacer exist(key): key = ");
-    if ((scanf("%d", &exist_6_arg)) != 1){
-        perror("[ERROR] El valor de key debe ser un int\n");
-        exit(-1);
-    }
+    exist_6_arg = key;
 	retval_1 = exist_6(&exist_6_arg, &result_1, clnt);
 	if (retval_1 != RPC_SUCCESS) {
 		clnt_perror (clnt, "call failed");
@@ -241,42 +202,3 @@ exist_prog_6(char *host)
 #endif	 /* DEBUG */
 }
 
-
-int
-main (int argc, char *argv[])
-{
-    char *host;
-
-
-    if (argc < 2) {
-        printf ("usage: %s server_host\n", argv[0]);
-        exit (1);
-    }
-    host = argv[1];
-    char peticion[20];
-    while(1) {
-        printf("Indique la operación a realizar: ");
-        // El usuario introduce por terminal la operación
-        scanf("%s", peticion);
-        if (strcmp(peticion,"init") == 0) {
-            innit_prog_1 (host);
-        }
-        else if (strcmp(peticion, "set_value") == 0){
-            set_value_prog_2 (host);
-        }
-        else if (strcmp(peticion, "get_value") == 0){
-            get_value_prog_3 (host);
-        }
-        else if (strcmp(peticion, "modify_value") == 0){
-            modify_value_prog_4 (host);
-        }
-        else if (strcmp(peticion, "delete_key") == 0){
-            delete_key_prog_5(host);
-        }
-        else if (strcmp(peticion, "exist") == 0){
-            exist_prog_6(host);
-        }
-    }
-    exit (0);
-
-}

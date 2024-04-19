@@ -8,7 +8,6 @@
 bool_t
 xdr_mensaje (XDR *xdrs, mensaje *objp)
 {
-	register int32_t *buf;
 
 	 if (!xdr_int (xdrs, &objp->key))
 		 return FALSE;
