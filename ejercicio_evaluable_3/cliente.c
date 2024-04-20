@@ -73,7 +73,7 @@ int main() {
                     }
                     printf("\n");
                 } else {
-                    printf("[Error] No se pudo obtener la tupla para la clave %d ,compruebe que existe", key);
+                    printf("[Error] No se pudo obtener la tupla para la clave %d ,compruebe que existe\n", key);
                 }
             }
         }
@@ -129,7 +129,7 @@ int main() {
             resultado = -1;
             printf("[ERROR] Operación no reconocida\n");
         }
-        printf("Resultado = %d\n", resultado);
+        printf("Resultado (cliente) = %d\n", resultado);
         limpiarBuffer();
     }
 }

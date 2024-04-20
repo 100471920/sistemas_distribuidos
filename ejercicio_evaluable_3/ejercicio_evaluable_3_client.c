@@ -7,8 +7,8 @@
 #include "ejercicio_evaluable_3.h"
 
 
-void
-init(char *host)
+
+int init()
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -28,14 +28,14 @@ init(char *host)
 		clnt_perror (clnt, "call failed");
         clnt_destroy (clnt);
 	}
-    printf("Resultado de la operación: %d\n", result_1);
+    return result_1;
 #ifndef	DEBUG
 #endif	 /* DEBUG */
 }
 
 
-void
-set_value(char *host, int key, char* val_1, int n_elem, double* vector)
+
+int set_value(int key, char* val_1, int n_elem, double* vector)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -64,14 +64,15 @@ set_value(char *host, int key, char* val_1, int n_elem, double* vector)
         clnt_perror (clnt, "call failed");
         clnt_destroy (clnt);
     }
+    return result_1;
 
 #ifndef	DEBUG
 #endif	 /* DEBUG */
 }
 
 
-void
-get_value(char *host, int key)
+
+int get_value(int key, char *value1, int *N_value2, double *V_value2)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -94,22 +95,25 @@ get_value(char *host, int key)
         clnt_perror (clnt, "call failed");
         clnt_destroy (clnt);
     }
+
     if(result_1.key != -1){
-    printf("key = %d\n", get_value_3_arg);
-    printf("val_1 = %s\n", result_1.val_1);
-    printf("n_elem = %d\n", result_1.vector.vector_len);
-    for(int i = 0; i < result_1.vector.vector_len; i++){
-        printf("vector[%d] = %lf\n", i, result_1.vector.vector_val[i]);
-    }}
-    printf("resultado = %d\n", result_1.key);
+        key =  get_value_3_arg;
+        strcpy(value1, result_1.val_1);
+        N_value2 = (int*)&result_1.vector.vector_len;
+        for(int i = 0; i < result_1.vector.vector_len; i++){
+            V_value2[i] = result_1.vector.vector_val[i];
+        }
+    return 0;
+    }
+    return -1;
 
 #ifndef	DEBUG
 #endif	 /* DEBUG */
 }
 
 
-void
-modify_value(char *host, int key, char* val_1, int n_elem, double* vector)
+
+int modify_value(int key, char* val_1, int n_elem, double* vector)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -136,17 +140,17 @@ modify_value(char *host, int key, char* val_1, int n_elem, double* vector)
     retval_1 = modify_value_4(&modify_value_4_arg, &result_1, clnt);
     if (retval_1 != RPC_SUCCESS) {
         clnt_perror (clnt, "call failed");
+        return -1;
         clnt_destroy (clnt);
     }
-    printf("Resultado = %d\n", result_1);
-
+    return 0;
 #ifndef	DEBUG
 #endif	 /* DEBUG */
 }
 
 
-void
-delete_key(char *host, int key)
+
+int delete_key(int key)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -168,15 +172,16 @@ delete_key(char *host, int key)
 		clnt_perror (clnt, "call failed");
         clnt_destroy (clnt);
 	}
-    printf("Resultado = %d\n",result_1);
+    return result_1;
+
 #ifndef	DEBUG
 
 #endif	 /* DEBUG */
 }
 
 
-void
-exist(char *host, int key)
+
+int exist(int key)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
@@ -196,7 +201,7 @@ exist(char *host, int key)
 		clnt_perror (clnt, "call failed");
         clnt_destroy (clnt);
 	}
-    printf("Resultado = %d\n", result_1);
+    return result_1;
 #ifndef	DEBUG
 
 #endif	 /* DEBUG */

@@ -139,7 +139,6 @@ get_value_3_svc(int *argp, struct mensaje *result, struct svc_req *rqstp)
     result->val_1 = (char *)malloc((256) * sizeof(char));
     result->vector.vector_val = (double *)malloc((32) * sizeof(double));
 
-    printf("rasda, %d", result->key);
     for(int i = 0; i < num_data; i++) {
         if (keys[i] == *argp) {
             // Si se encuentra la clave, copiar los datos al mensaje de respuesta
@@ -151,10 +150,9 @@ get_value_3_svc(int *argp, struct mensaje *result, struct svc_req *rqstp)
             }
             break;
         }
-        printf("No encontrado\n");
     }
 
-
+    printf("Result (svr) = %d\n", result->key);
 
 
     printf("Operación get_value realizada\n");
