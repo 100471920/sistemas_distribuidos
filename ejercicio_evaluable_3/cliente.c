@@ -48,7 +48,7 @@ int main() {
                         } else { resultado = 0; };
                     }
                     if (resultado == 0) {
-                        resultado = set_value("localhost", key, valor_1, n_elem, vector);
+                        resultado = set_value(key, valor_1, n_elem, vector);
                     }
                 }
             }
@@ -61,7 +61,7 @@ int main() {
                 printf("[ERROR] La clave introducida no es de tipo int\n");
             }
             else {
-                resultado = get_value("localhost", key, valor_1, &n_elem, vector);
+                resultado = get_value(key, valor_1, &n_elem, vector);
                 if (resultado == 0) {
                     printf("Tupla encontrada:\n");
                     printf("Clave: %d\n", key);
@@ -108,7 +108,7 @@ int main() {
         else if (strcmp(peticion, "delete_key") == 0){
             printf("Indique la clave sobre la que se desea hacer delete_key(key): key = ");
             if ((scanf("%d", &key)) == 1){
-                resultado = delete_key("localhost", key);
+                resultado = delete_key(key);
             }
             else{
                 perror("[ERROR] La clave introducida no es de tipo int\n");
@@ -118,7 +118,7 @@ int main() {
         else if (strcmp(peticion, "exist") == 0){
             printf("Indique la clave sobre la que se desea hacer exist(key): key = ");
             if ((scanf("%d", &key)) == 1){
-                resultado = exist("localhost", key);
+                resultado = exist(key);
             }
             else{
                 perror("[ERROR] La clave introducida no es de tipo int\n");

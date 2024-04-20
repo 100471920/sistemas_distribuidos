@@ -2,6 +2,8 @@ CC = gcc
 CFLAGS = -Wall -g -I/usr/include/tirpc
 LDLIBS += -lnsl -lpthread -ldl -ltirpc
 
+LIB_LOCATION = ./
+
 # Lista de archivos fuente
 SERVER_SRCS = ejercicio_evaluable_3_server.c ejercicio_evaluable_3_svc.c ejercicio_evaluable_3_xdr.c
 CLIENT_SRCS = ejercicio_evaluable_3_client.c ejercicio_evaluable_3_client.h ejercicio_evaluable_3_clnt.c cliente.c

@@ -16,7 +16,12 @@ int init()
 	char *innit_1_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, INNIT_PROG, INNIT_VERSION, "udp");
+    char *host = getenv("IP_TUPLAS");
+    if (host == NULL) {
+        fprintf(stderr, "Error: La variable de entorno 'IP_TUPLAS' no está definida.\n");
+        exit(1);
+    }
+	clnt = clnt_create (host, INNIT_PROG, INNIT_VERSION, "tcp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
@@ -43,7 +48,12 @@ int set_value(int key, char* val_1, int n_elem, double* vector)
 	struct mensaje  set_value_2_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, SET_VALUE_PROG, SET_VALUE_VERSION, "udp");
+    char *host = getenv("IP_TUPLAS");
+    if (host == NULL) {
+        fprintf(stderr, "Error: La variable de entorno 'IP_TUPLAS' no está definida.\n");
+        exit(1);
+    }
+	clnt = clnt_create (host, SET_VALUE_PROG, SET_VALUE_VERSION, "tcp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
@@ -80,7 +90,12 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2)
 	int  get_value_3_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, GET_VALUE_PROG, GET_VALUE_VERSION, "udp");
+    char *host = getenv("IP_TUPLAS");
+    if (host == NULL) {
+        fprintf(stderr, "Error: La variable de entorno 'IP_TUPLAS' no está definida.\n");
+        exit(1);
+    }
+	clnt = clnt_create (host, GET_VALUE_PROG, GET_VALUE_VERSION, "tcp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
@@ -121,7 +136,12 @@ int modify_value(int key, char* val_1, int n_elem, double* vector)
 	struct mensaje  modify_value_4_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, MODIFY_VALUE_PROG, MODIFY_VALUE_VERSION, "udp");
+    char *host = getenv("IP_TUPLAS");
+    if (host == NULL) {
+        fprintf(stderr, "Error: La variable de entorno 'IP_TUPLAS' no está definida.\n");
+        exit(1);
+    }
+	clnt = clnt_create (host, MODIFY_VALUE_PROG, MODIFY_VALUE_VERSION, "tcp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
@@ -158,7 +178,12 @@ int delete_key(int key)
 	int  delete_key_5_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, DELETE_KEY_PROG, DELETE_KEY_VERSION, "udp");
+    char *host = getenv("IP_TUPLAS");
+    if (host == NULL) {
+        fprintf(stderr, "Error: La variable de entorno 'IP_TUPLAS' no está definida.\n");
+        exit(1);
+    }
+	clnt = clnt_create (host, DELETE_KEY_PROG, DELETE_KEY_VERSION, "tcp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
@@ -189,7 +214,12 @@ int exist(int key)
 	int  exist_6_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, EXIST_PROG, EXIST_VERSION, "udp");
+    char *host = getenv("IP_TUPLAS");
+    if (host == NULL) {
+        fprintf(stderr, "Error: La variable de entorno 'IP_TUPLAS' no está definida.\n");
+        exit(1);
+    }
+	clnt = clnt_create (host, EXIST_PROG, EXIST_VERSION, "tcp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
