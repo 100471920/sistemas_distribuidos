@@ -33,13 +33,16 @@ ejercicio_evaluable_3_client.o: ejercicio_evaluable_3_client.c ejercicio_evaluab
 %.o: %.c
 	@echo "Compilando $<"
 	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+
 # Compilar la librería dinámica del cliente
 $(CLIENT_LIB): $(CLIENT_OBJS)
 	@echo "Compilando cliente objetos: $(CLIENT_OBJS)"
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
 
 # Compilar el ejecutable del cliente
-$(CLIENT_EXEC): cliente.o
-	$(CC) $(CFLAGS) -o $@ $^ -L. -lejercicio_evaluable_3_client $(LDLIBS)
+$(CLIENT_EXEC): cliente.o ejercicio_evaluable_3_xdr.o
+	LD_LIBRARY_PATH=.. $(CC) $(CFLAGS) -o $@ $^ -L. -lejercicio_evaluable_3_client $(LDLIBS)
+
+
 clean:
 	rm -f $(SERVER_EXEC) $(CLIENT_LIB) $(CLIENT_EXEC) $(SERVER_OBJS) $(CLIENT_OBJS)

@@ -8,7 +8,7 @@
 
 
 void
-innit(char *host)
+init(char *host)
 {
 	CLIENT *clnt;
 	enum clnt_stat retval_1;
