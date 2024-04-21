@@ -163,7 +163,7 @@ int modify_value(int key, char* val_1, int n_elem, double* vector)
         return -1;
         clnt_destroy (clnt);
     }
-    return 0;
+    return result_1;
 #ifndef	DEBUG
 #endif	 /* DEBUG */
 }

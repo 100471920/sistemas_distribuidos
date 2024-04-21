@@ -68,10 +68,14 @@ int main() {
                     printf("Valor1: %s\n", valor_1);
                     printf("Valor2 longitud: %d\n", n_elem);
                     printf("Valor2 vector:\n");
+                    printf("[");
                     for (int i = 0; i < n_elem; i++) {
                         printf("%.2lf ", vector[i]);
+                        if (i != n_elem - 1) {
+                            printf(", ");
+                        }
                     }
-                    printf("\n");
+                    printf("]\n");
                 } else {
                     printf("[Error] No se pudo obtener la tupla para la clave %d ,compruebe que existe\n", key);
                 }
@@ -129,7 +133,7 @@ int main() {
             resultado = -1;
             printf("[ERROR] Operación no reconocida\n");
         }
-        printf("Resultado (cliente) = %d\n", resultado);
+        printf("Resultado = %d\n", resultado);
         limpiarBuffer();
     }
 }
