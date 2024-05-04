@@ -14,7 +14,7 @@ int *keys;
 char **valores_1;
 int* num_elements;
 double **vectores;
-int num_data = 0; // Numero de elementos almacenados
+int registered = 0; // Numero de elementos almacenados
 
 pthread_mutex_t mutex_shared_variables;
 pthread_mutex_t mutex_mensaje;
@@ -65,7 +65,7 @@ void tratar_mensaje(int  *socket) {
         if (op == 0) {
             // Funcion init no leer mas
             strcpy(resultado, "0");
-            num_data = 0;
+            registered = 0;
 
             pthread_mutex_lock(&mutex_shared_variables);
 
@@ -92,7 +92,7 @@ void tratar_mensaje(int  *socket) {
             token = strtok(NULL, ",");
             key = atoi(token);
             pthread_mutex_lock(&mutex_shared_variables);
-            for (int i = 0; i < num_data; i++) {
+            for (int i = 0; i < registered; i++) {
                 if (keys[i] == key) {
                     index = i;
                 }
@@ -109,19 +109,19 @@ void tratar_mensaje(int  *socket) {
             free(vectores[index]);
 
             // Se recoloca la base de datos para que no se queden espacios intermedios
-            for (int i = index; i < num_data - 1; i++) {
+            for (int i = index; i < registered - 1; i++) {
                 keys[i] = keys[i + 1];
                 valores_1[i] = valores_1[i + 1];
                 num_elements[i] = num_elements[i + 1];
                 vectores[i] = vectores[i + 1];
             }
-            num_data--;
+            registered--;
 
             // Se relocaliza para ocupar el tamaño justo en memoria
-            keys = realloc(keys, num_data * sizeof(int));
-            valores_1 = realloc(valores_1, num_data * sizeof(char *));
-            num_elements = realloc(num_elements, num_data * sizeof(int));
-            vectores = realloc(vectores, num_data * sizeof(double *));
+            keys = realloc(keys, registered * sizeof(int));
+            valores_1 = realloc(valores_1, registered * sizeof(char *));
+            num_elements = realloc(num_elements, registered * sizeof(int));
+            vectores = realloc(vectores, registered * sizeof(double *));
 
             strcpy(resultado, "0");
             pthread_mutex_unlock(&mutex_shared_variables);
@@ -161,11 +161,11 @@ void tratar_mensaje(int  *socket) {
             }
 
             // Se reserva memoria para los nuevos valores
-            int *temp_keys = realloc(keys, num_data * sizeof(int));
-            int *temp_num_elements = realloc(num_elements, num_data * sizeof(int));
+            int *temp_keys = realloc(keys, registered * sizeof(int));
+            int *temp_num_elements = realloc(num_elements, registered * sizeof(int));
             char **temp_valores_1 = NULL;
-            temp_valores_1 = realloc(valores_1, num_data * sizeof(char *));
-            double **tempo_vectores = realloc(vectores, num_data * sizeof(double *));
+            temp_valores_1 = realloc(valores_1, registered * sizeof(char *));
+            double **tempo_vectores = realloc(vectores, registered * sizeof(double *));
             if (temp_keys == NULL) {
                 printf("Memory allocation failed\n");
                 strcpy(resultado, "-1");
@@ -190,7 +190,7 @@ void tratar_mensaje(int  *socket) {
             pthread_mutex_lock(&mutex_shared_variables);
 
             // Si cuando se intenta insertar key esta ya existe, da error
-            for (int i = 0; i < num_data; i++) {
+            for (int i = 0; i < registered; i++) {
                 if (keys[i] == key) {
                     strcpy(resultado, "-1");
                     break;
@@ -198,7 +198,7 @@ void tratar_mensaje(int  *socket) {
             }
             // Solo se ejecuta si no ha habido errores previamente
             if (strcmp(resultado, "0") == 0) {
-                num_data++; // Se añade un dato a la base de datos
+                registered++; // Se añade un dato a la base de datos
                 // Hacemos la capacidad de la base de datos más grande
                 keys = temp_keys;
                 valores_1 = temp_valores_1;
@@ -206,13 +206,13 @@ void tratar_mensaje(int  *socket) {
                 vectores = tempo_vectores;
 
                 // Asignamos los valores al nuevo elemento de la base de datos
-                keys[num_data - 1] = key;
-                num_elements[num_data - 1] = n_elem;
-                valores_1[num_data - 1] = (char *) malloc((sizeof(value_1) + 1) * sizeof(char));
-                strcpy(valores_1[num_data - 1], value_1);
-                vectores[num_data - 1] = (double *) malloc((n_elem) * sizeof(double));
+                keys[registered - 1] = key;
+                num_elements[registered - 1] = n_elem;
+                valores_1[registered - 1] = (char *) malloc((sizeof(value_1) + 1) * sizeof(char));
+                strcpy(valores_1[registered - 1], value_1);
+                vectores[registered - 1] = (double *) malloc((n_elem) * sizeof(double));
                 for (int i = 0; i < n_elem; i++) {
-                    vectores[num_data - 1][i] = vector[i];
+                    vectores[registered - 1][i] = vector[i];
                 }
             }
 
@@ -252,7 +252,7 @@ void tratar_mensaje(int  *socket) {
             sprintf(to_send + strlen(to_send), "%s,", resultado);
 
             // Buscar valores en la base de datos
-            for (int i = 0; i < num_data; i++) {
+            for (int i = 0; i < registered; i++) {
                 if (keys[i] == key) {
                     // Si se encuentra la clave, copiar  n_elem
                     int int_length = snprintf(NULL, 0, "%d", num_elements[i]);
@@ -344,7 +344,7 @@ void tratar_mensaje(int  *socket) {
 
                 pthread_mutex_lock(&mutex_shared_variables);
 
-                for (int i = 0; i < num_data; i++) {
+                for (int i = 0; i < registered; i++) {
                     if (key == keys[i]) {
                         free(valores_1[i]);
 
@@ -389,7 +389,7 @@ void tratar_mensaje(int  *socket) {
             strcpy(resultado, "0");
             pthread_mutex_lock(&mutex_shared_variables);
 
-            for (int i = 0; i < num_data; i++) {
+            for (int i = 0; i < registered; i++) {
                 if (keys[i] == key) {
                     strcpy(resultado, "1");
                     break;

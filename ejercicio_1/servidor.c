@@ -14,7 +14,7 @@ int *keys;
 char **valores_1;
 int* num_elements;
 double **vectores;
-int num_data = 0; // Numero de elementos almacenados
+int registered = 0; // Numero de elementos almacenados
 int inicializado = 1;
 
 pthread_mutex_t mutex_shared_variables;
@@ -46,7 +46,7 @@ void tratar_mensaje(void  *mess) {
         // Funcion init
         resultado = 0;
         inicializado = 0;
-        num_data = 0;
+        registered = 0;
 
         pthread_mutex_lock(&mutex_shared_variables);
 
@@ -69,7 +69,7 @@ void tratar_mensaje(void  *mess) {
 
         pthread_mutex_lock(&mutex_shared_variables);
 
-        for (int i = 0; i < num_data; i++){
+        for (int i = 0; i < registered; i++){
             if (keys[i] == mensaje.clave){
                 index = i;
             }
@@ -83,18 +83,18 @@ void tratar_mensaje(void  *mess) {
         free(valores_1[index]);
         free(vectores[index]);
 
-        for (int i = index; i < num_data - 1; i++){
+        for (int i = index; i < registered - 1; i++){
             keys[i] = keys[i + 1];
             valores_1[i] = valores_1[i + 1];
             num_elements[i] = num_elements[i + 1];
             vectores[i] = vectores[i + 1];
         }
-        num_data--;
+        registered--;
 
-        keys = realloc(keys, num_data * sizeof(int));
-        valores_1 = realloc(valores_1, num_data * sizeof(char *));
-        num_elements = realloc(num_elements, num_data * sizeof(int));
-        vectores = realloc(vectores, num_data * sizeof(double *));
+        keys = realloc(keys, registered * sizeof(int));
+        valores_1 = realloc(valores_1, registered * sizeof(char *));
+        num_elements = realloc(num_elements, registered * sizeof(int));
+        vectores = realloc(vectores, registered * sizeof(double *));
 
         resultado = 0;
 
@@ -112,7 +112,7 @@ void tratar_mensaje(void  *mess) {
 
         pthread_mutex_lock(&mutex_shared_variables);
 
-        for(int i = 0; i < num_data; i++) {
+        for(int i = 0; i < registered; i++) {
             if (keys[i] == mensaje.clave) {
                 resultado = -1;
                 break;
@@ -123,12 +123,12 @@ void tratar_mensaje(void  *mess) {
         }
 
         if(resultado != -1){
-            num_data++;
-            int *temp_keys = realloc(keys, num_data * sizeof(int));
-            int *temp_num_elements = realloc(num_elements, num_data * sizeof(int));
+            registered++;
+            int *temp_keys = realloc(keys, registered * sizeof(int));
+            int *temp_num_elements = realloc(num_elements, registered * sizeof(int));
             char **temp_valores_1 = NULL;
-            temp_valores_1 = realloc(valores_1, num_data * sizeof(char*));
-            double **tempo_vectores = realloc(vectores, num_data * sizeof(double*));
+            temp_valores_1 = realloc(valores_1, registered * sizeof(char*));
+            double **tempo_vectores = realloc(vectores, registered * sizeof(double*));
             if (temp_keys == NULL) {
                 printf("Memory allocation failed\n");
                 resultado = -1;
@@ -164,13 +164,13 @@ void tratar_mensaje(void  *mess) {
             vectores = tempo_vectores;
 
             // Asignamos los valores al nuevo elemento de la base de datos
-            keys[num_data - 1] = mensaje.clave;
-            num_elements[num_data - 1] = mensaje.n_elem;
-            valores_1[num_data - 1] = (char *)malloc((sizeof(mensaje.valor_1) + 1) * sizeof(char));
-            strcpy(valores_1[num_data - 1], mensaje.valor_1);
-            vectores[num_data - 1] = (double *)malloc((mensaje.n_elem) * sizeof(double));
+            keys[registered - 1] = mensaje.clave;
+            num_elements[registered - 1] = mensaje.n_elem;
+            valores_1[registered - 1] = (char *)malloc((sizeof(mensaje.valor_1) + 1) * sizeof(char));
+            strcpy(valores_1[registered - 1], mensaje.valor_1);
+            vectores[registered - 1] = (double *)malloc((mensaje.n_elem) * sizeof(double));
             for (int i = 0; i < mensaje.n_elem; i++){
-                vectores[num_data - 1][i] = mensaje.vector[i];
+                vectores[registered - 1][i] = mensaje.vector[i];
             }
             }
 
@@ -190,7 +190,7 @@ void tratar_mensaje(void  *mess) {
         pthread_mutex_lock(&mutex_shared_variables);
 
         // Buscar valores en la base de datos
-        for(int i = 0; i < num_data; i++) {
+        for(int i = 0; i < registered; i++) {
             if (keys[i] == mensaje.clave) {
                 // Si se encuentra la clave, copiar los datos al mensaje de respuesta
                 resultado = 0; // Indicador de éxito
@@ -220,7 +220,7 @@ void tratar_mensaje(void  *mess) {
 
         pthread_mutex_lock(&mutex_shared_variables);
 
-        for (int i = 0; i < num_data; i++){
+        for (int i = 0; i < registered; i++){
             if (mensaje.clave == keys[i]){
                 valores_1[i] = realloc(valores_1[i], sizeof(mensaje.valor_1) * sizeof(char));
                 strcpy(valores_1[i], mensaje.valor_1);
@@ -245,7 +245,7 @@ void tratar_mensaje(void  *mess) {
         resultado = 0;
         pthread_mutex_lock(&mutex_shared_variables);
 
-        for (int i; i < num_data; i++){
+        for (int i; i < registered; i++){
             if (keys[i] == mensaje.clave){
                 resultado = 1;
                 break;
