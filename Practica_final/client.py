@@ -20,6 +20,7 @@ class client:
     # ****************** ATTRIBUTES ******************
     _server = None
     _port = -1
+    _username = None
     # ******************** METHODS *******************
     
 
@@ -40,6 +41,7 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if response == "0\0":
+                    client._username = user
                     print("c> REGISTER OK")
                     return client.RC.OK
                 elif response == "1\0":
@@ -62,7 +64,7 @@ class client:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
 
-                # Enviar el comando REGISTER
+                # Enviar el comando UNREGISTER
                 command = f"UNREGISTER,{user}\0"
                 sock.sendall(command.encode())
 
@@ -103,7 +105,7 @@ class client:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
 
-                # Enviar el comando REGISTER
+                # Enviar el comando CONNECT
                 command = f"CONNECT,{user},{server_socket}\0"
                 sock.sendall(command.encode())
 
@@ -111,6 +113,7 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if response == "0\0":
+                    client._username = user
                     print("c> CONNECT OK")
                     return client.RC.OK
                 elif response == "1\0":
@@ -136,22 +139,173 @@ class client:
     @staticmethod
     def publish(fileName,  description) :
         #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Que el la longitud de nombre se avalida
+            if (len(fileName)>256 or len(description)>256):
+                print("c> PUBLISH FAIL")
+                return client.RC.ERROR
+
+            # Conectarse al servidor
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((client._server, client._port))
+                ##
+
+                # Enviar el comando REGISTER
+                command = f"PUBLISH,{client._username},{fileName},{description}\0"
+                sock.sendall(command.encode())
+
+                # Recibir la respuesta del servidor
+                response = sock.recv(1024).decode().strip()
+                # Analizar la respuesta
+                if response == "0\0":
+                    print("c> PUBLISH OK")
+                    return client.RC.OK
+                elif response == "1\0":
+                    print("c> PUBLISH FAIL, USER DOES NOT EXIST")
+                    return client.RC.ERROR
+                elif response == "2\0":
+                    print("c> PUBLISH FAIL, USER NOT CONNECTED")
+                    return client.RC.ERROR
+                elif response == "3\0":
+                    print("c> PUBLISH FAIL, CONTENT ALREADY PUBLISHED")
+                    return client.RC.ERROR
+                else:
+                    print("c> PUBLISH FAIL")
+                    return client.RC.USER_ERROR
+
+        except Exception as e:
+            print("c> PUBLISH FAIL")
+            return client.RC.USER_ERROR
 
     @staticmethod
     def delete(fileName) :
         #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Que el la longitud de nombre se avalida
+            if (len(fileName)>256):
+                print("c> DELETE FAIL")
+                return client.RC.ERROR
+            
+            # Conectarse al servidor
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((client._server, client._port))
 
+                # Enviar el comando UNREGISTER
+                command = f"DELETE,{client._username},{fileName}\0"
+                sock.sendall(command.encode())
+
+                # Recibir la respuesta del servidor
+                response = sock.recv(1024).decode().strip()
+                # Analizar la respuesta
+                if response == "0\0":
+                    print("c> DELETE OK")
+                    return client.RC.OK
+                elif response == "1\0":
+                    print("c> DELETE FAIL, USER DOES NOT EXIST")
+                    return client.RC.ERROR
+                elif response == "2\0":
+                    print("c> DELETE FAIL, USER NOT CONNECTED")
+                    return client.RC.ERROR
+                elif response == "3\0":
+                    print("c> DELETE FAIL, CONTENT NOT PUBLISHED")
+                    return client.RC.ERROR
+                else:
+                    print("c> DELETE FAIL")
+                    return client.RC.USER_ERROR
+
+        except Exception as e:
+            print("c> DELETE FAIL")
+            return client.RC.USER_ERROR
     @staticmethod
     def listusers() :
         #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Conectarse al servidor
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((client._server, client._port))
+
+                # Enviar el comando UNREGISTER
+                command = f"LIST_USERS,{client._username}\0"
+                sock.sendall(command.encode())
+
+                # Recibir la respuesta del servidor
+                received_data = b""
+                while True:
+                    data = sock.recv(1024)
+                    if not data:
+                        break
+                    received_data += data
+
+                # Decodificar y procesar los datos recibidos
+                response = received_data.decode().strip()
+                parts = response.split(",")
+                # Analizar la respuesta
+                if parts[0] == "0\0":
+                    print("c> LIST_USERS OK")
+                    for i in range(1, len(parts), 3):
+                        print(parts[i] + parts[i+1] + parts[i+2])
+                        
+                    return client.RC.OK
+                elif parts[0] == "1\0":
+                    print("c> LIST_USERS FAIL, USER DOES NOT EXIST")
+                    return client.RC.ERROR
+                elif parts[0] == "2\0":
+                    print("c> LIST_USERS FAIL, USER NOT CONNECTED")
+                    return client.RC.ERROR
+                else:
+                    print("c> LIST_USERS FAIL")
+                    return client.RC.USER_ERROR
+
+        except Exception as e:
+            print("c> LIST_USERS FAIL")
+            return client.RC.USER_ERROR
 
     @staticmethod
     def  listcontent(user) :
         #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Conectarse al servidor
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((client._server, client._port))
+
+                # Enviar el comando UNREGISTER
+                command = f"LIST_USERS,{client._username},{user}\0"
+                sock.sendall(command.encode())
+
+                # Recibir la respuesta del servidor
+                received_data = b""
+                while True:
+                    data = sock.recv(1024)
+                    if not data:
+                        break
+                    received_data += data
+
+                # Decodificar y procesar los datos recibidos
+                response = received_data.decode().strip()
+                parts = response.split(",")
+                # Analizar la respuesta
+                if parts[0] == "0\0":
+                    print("c> LIST_CONTENT OK")
+                    for i in range(1, len(parts), 2):
+                        print(parts[i] + '"' + parts[i+1] + '"')
+                        
+                    return client.RC.OK
+                elif parts[0] == "1\0":
+                    print("c> LIST_CONTENT FAIL, USER DOES NOT EXIST")
+                    return client.RC.ERROR
+                elif parts[0] == "2\0":
+                    print("c> LIST_CONTENT FAIL, USER NOT CONNECTED")
+                    return client.RC.ERROR
+                elif parts[0] == "3\0":
+                    print("c> LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST")
+                    return client.RC.ERROR
+                else:
+                    print("c> LIST_CONTENT FAIL")
+                    return client.RC.USER_ERROR
+
+        except Exception as e:
+            print("c> LIST_CONTENT FAIL")
+            return client.RC.USER_ERROR
 
     @staticmethod
     def  getfile(user,  remote_FileName,  local_FileName) :
