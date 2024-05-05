@@ -40,11 +40,11 @@ class client:
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
-                if response == "0\0":
+                if (response == "0\0"):
                     client._username = user
                     print("c> REGISTER OK")
                     return client.RC.OK
-                elif response == "1\0":
+                elif (response == "1\0"):
                     print("c> USERNAME IN USE")
                     return client.RC.ERROR
                 else:
@@ -71,10 +71,10 @@ class client:
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
-                if response == "0\0":
+                if (response == "0\0"):
                     print("c> UNREGISTER OK")
                     return client.RC.OK
-                elif response == "1\0":
+                elif (response == "1\0"):
                     print("c> USER DOES NOT EXIST")
                     return client.RC.ERROR
                 else:
@@ -112,14 +112,14 @@ class client:
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
-                if response == "0\0":
+                if (response == "0\0"):
                     client._username = user
                     print("c> CONNECT OK")
                     return client.RC.OK
-                elif response == "1\0":
+                elif (response == "1\0"):
                     print("c> CONNECT FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
-                elif response == "2\0":
+                elif (response == "2\0"):
                     print("c> USER ALREADY CONNECTED")
                     return client.RC.ERROR
                 else:
@@ -134,7 +134,34 @@ class client:
     @staticmethod
     def disconnect(user) :
         #  Write your code here
-        return client.RC.ERROR
+        try:
+            # Conectarse al servidor
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((client._server, client._port))
+
+                # Enviar el comando DISCONNECT
+                command = f"DISCONNECT,{user}\0"
+                sock.sendall(command.encode())
+
+                # Recibir la respuesta del servidor
+                response = sock.recv(1024).decode().strip()
+                # Analizar la respuesta
+                if (response == "0\0"):
+                    print("c> DISCONNECT OK")
+                    return client.RC.OK
+                elif (response == "1\0"):
+                    print("c> DISCONNECT FAIL / USER DOES NOT EXIST")
+                    return client.RC.ERROR
+                elif (response == "2\0"):
+                    print("c> DISCONNECT FAIL / USER NOT CONNECTED")
+                    return client.RC.ERROR
+                else:
+                    print("c> DISCONNECT FAIL")
+                    return client.RC.USER_ERROR
+
+        except Exception as e:
+            print("c> DISCONNECT FAIL")
+            return client.RC.USER_ERROR
 
     @staticmethod
     def publish(fileName,  description) :
@@ -150,23 +177,23 @@ class client:
                 sock.connect((client._server, client._port))
                 ##
 
-                # Enviar el comando REGISTER
+                # Enviar el comando PUBLISH
                 command = f"PUBLISH,{client._username},{fileName},{description}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
-                if response == "0\0":
+                if (response == "0\0"):
                     print("c> PUBLISH OK")
                     return client.RC.OK
-                elif response == "1\0":
+                elif (response == "1\0"):
                     print("c> PUBLISH FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
-                elif response == "2\0":
+                elif (response == "2\0"):
                     print("c> PUBLISH FAIL, USER NOT CONNECTED")
                     return client.RC.ERROR
-                elif response == "3\0":
+                elif (response == "3\0"):
                     print("c> PUBLISH FAIL, CONTENT ALREADY PUBLISHED")
                     return client.RC.ERROR
                 else:
@@ -190,23 +217,23 @@ class client:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
 
-                # Enviar el comando UNREGISTER
+                # Enviar el comando DELETE
                 command = f"DELETE,{client._username},{fileName}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
-                if response == "0\0":
+                if (response == "0\0"):
                     print("c> DELETE OK")
                     return client.RC.OK
-                elif response == "1\0":
+                elif (response == "1\0"):
                     print("c> DELETE FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
-                elif response == "2\0":
+                elif (response == "2\0"):
                     print("c> DELETE FAIL, USER NOT CONNECTED")
                     return client.RC.ERROR
-                elif response == "3\0":
+                elif (response == "3\0"):
                     print("c> DELETE FAIL, CONTENT NOT PUBLISHED")
                     return client.RC.ERROR
                 else:
@@ -232,7 +259,7 @@ class client:
                 received_data = b""
                 while True:
                     data = sock.recv(1024)
-                    if not data:
+                    if (not data):
                         break
                     received_data += data
 
@@ -240,16 +267,16 @@ class client:
                 response = received_data.decode().strip()
                 parts = response.split(",")
                 # Analizar la respuesta
-                if parts[0] == "0\0":
+                if (parts[0] == "0\0"):
                     print("c> LIST_USERS OK")
                     for i in range(1, len(parts), 3):
                         print(parts[i] + parts[i+1] + parts[i+2])
                         
                     return client.RC.OK
-                elif parts[0] == "1\0":
+                elif (parts[0] == "1\0"):
                     print("c> LIST_USERS FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
-                elif parts[0] == "2\0":
+                elif (parts[0] == "2\0"):
                     print("c> LIST_USERS FAIL, USER NOT CONNECTED")
                     return client.RC.ERROR
                 else:
@@ -268,7 +295,7 @@ class client:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
 
-                # Enviar el comando UNREGISTER
+                # Enviar el comando LIST_USERS
                 command = f"LIST_USERS,{client._username},{user}\0"
                 sock.sendall(command.encode())
 
@@ -276,7 +303,7 @@ class client:
                 received_data = b""
                 while True:
                     data = sock.recv(1024)
-                    if not data:
+                    if (not data):
                         break
                     received_data += data
 
@@ -284,19 +311,19 @@ class client:
                 response = received_data.decode().strip()
                 parts = response.split(",")
                 # Analizar la respuesta
-                if parts[0] == "0\0":
+                if (parts[0] == "0\0"):
                     print("c> LIST_CONTENT OK")
                     for i in range(1, len(parts), 2):
                         print(parts[i] + '"' + parts[i+1] + '"')
                         
                     return client.RC.OK
-                elif parts[0] == "1\0":
+                elif (parts[0] == "1\0"):
                     print("c> LIST_CONTENT FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
-                elif parts[0] == "2\0":
+                elif (parts[0] == "2\0"):
                     print("c> LIST_CONTENT FAIL, USER NOT CONNECTED")
                     return client.RC.ERROR
-                elif parts[0] == "3\0":
+                elif (parts[0] == "3\0"):
                     print("c> LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST")
                     return client.RC.ERROR
                 else:
@@ -310,17 +337,61 @@ class client:
     @staticmethod
     def  getfile(user,  remote_FileName,  local_FileName) :
         #  Write your code here
-        return client.RC.ERROR
+        try:            
+            # Conectarse al servidor para coger el ip y puerto del otro cliente
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((client._server, client._port))
+
+                # Enviar el comando GET_FILE
+                command = f"GET_FILE,{user}\0"
+                sock.sendall(command.encode())
+
+                # Recibir la respuesta del servidor
+                response = sock.recv(1024).decode().strip()
+                parts = response.split(",")
+                # Analizar la respuesta
+                if (parts[0] == "0\0"):
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as remote_sock:
+                        remote_sock.connect((parts[1], int(parts[2])))
+
+                        # Enviar el nombre del archivo remoto
+                        command = f"GET_FILE,{remote_FileName}\0" 
+                        remote_sock.sendall(command.encode())
+
+                        response = remote_sock.recv(1024).decode().strip().split(",")
+                        # Abrir el archivo local para escritura binaria
+                        if (response[0]== "0\0"):
+                            with open(local_FileName, 'wb') as local_file:
+                                # Recibir y escribir los datos del archivo remoto en el archivo local
+                                data = ", ".join(response[1:]) #remote_sock.recv(1024)
+                                while data:
+                                    local_file.write(data)
+                                    data = remote_sock.recv(1024)
+
+                            # Imprimir mensaje de éxito
+                            print("c> GET_FILE OK")
+                            return client.RC.OK
+                        elif (response[0]== "1\0"):
+                            print("GET_FILE FAIL / fILE NOT EXIST")
+                            return client.RC.ERROR             
+                else:
+                    print("c> GET_FILE FAIL")
+                    return client.RC.USER_ERROR
+
+        except Exception as e:
+            print("c> GET_FILE FAIL")
+             #Si la transferencia no se puede completar, borra el archivo local si existe
+            if (os.path.exists(local_FileName)):
+                os.remove(local_FileName)
+            return client.RC.USER_ERROR
     
     @staticmethod
     def attendpetitions(server_socket):
         try:
             while True:
                 # Esperar por una conexión entrante
-                print("paso 1")
                 client_socket, addr = server_socket.accept()
                 print(f"Conexión entrante desde {addr}")
-                print("paso 2")
                 try:
                     
                     script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -329,45 +400,49 @@ class client:
                     
                     # Recibir el comando del cliente
                     command = client_socket.recv(1024).decode().strip()
+                    parts = command.split(",")
 
                     # Analizar el comando
-                    if command.startswith("GET_FILE"):
+                    if (parts[0] == "GET_FILE\0"):
                         # Extraer el nombre del archivo local del comando
-                        _, local_file = command.split(",", 1)
-                        local_file = local_file.strip()
+                        local_file = parts[1].strip()
 
                         # Verificar si el archivo local existe en la carpeta banco_archivos
-                        if os.path.exists(os.path.join(local_file_path, local_file)):
+                        if (os.path.exists(os.path.join(local_file_path, local_file))):
 
                             # Abrir y enviar el contenido del archivo al cliente
                             try:
                                 with open(os.path.join(local_file_path, local_file), "rb") as file:
+                                    client_socket.sendall(b"0,")
                                     content = file.read(1024)
                                     while content:
                                         client_socket.sendall(content)
                                         content = file.read(1024)
+                                return client.RC.OK
      
                             except Exception:
                                 # Enviar código 2 en caso de error durante la transferencia del archivo
                                 client_socket.sendall(b"2")
+                                return client.RC.USER_ERROR
 
-
-
-                            # Enviar una confirmación al cliente
-                            client_socket.sendall(b"0")
                         else:
-                            # Enviar un mensaje de error al cliente
+                            # Enviar un mensaje de error al cliente, archivo no existe
                             client_socket.sendall(b"1")
-
-                    # Si el comando no es GET_FILE, podrías agregar lógica para manejar otros comandos aquí
+                            return client.RC.ERROR
+                    else:
+                        # No se envio la operación GET_FILE
+                        client_socket.sendall(b"2")
+                        return client.RC.ERROR
                 
                 except Exception:
                     # Se ha cerrado la conexión por parte del cliente
                     print(f"La conexión con {addr} ha sido cerrada por el cliente.")
+                    return client.RC.USER_ERROR
 
                 finally:
                     # Cerrar el socket del cliente
                     client_socket.close()
+                    return client.RC.USER_ERROR
 
         except Exception as e:
             print("Error en attendpetitions:", str(e))
