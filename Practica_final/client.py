@@ -22,6 +22,8 @@ class client:
     _port = -1
     _username = None
     _connected = False
+    _thread = None
+    _server_socket = None
     # ******************** METHODS *******************
     
 
@@ -30,6 +32,9 @@ class client:
     def  register(user):
         #  Write your code here
         try:
+            if (user is None):
+                print("c> REGISTER FAIL")
+                return client.RC.USER_ERROR
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
@@ -61,6 +66,9 @@ class client:
     def  unregister(user) :
         #  Write your code here
         try:
+            if (user is None):
+                print("c> UNREGISTER FAIL")
+                return client.RC.USER_ERROR
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
@@ -98,21 +106,26 @@ class client:
 
         # 2 enviar cadena CONNECT, <user_name>, str<puerto>
         try:
-            server_socket = find_free_port()
+            if (user is None):
+                print("c> CONNECT FAIL")
+                return client.RC.USER_ERROR
+            
+            client._server_socket = find_free_port()
             client._connected = True
-            file_thread = threading.Thread(target=client.attendpetitions, args=(server_socket,))
-            file_thread.start()
+            client._thread = threading.Thread(target=client.attendpetitions, args=(client._server_socket,))
+            client._thread.start()
         
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
 
                 # Enviar el comando CONNECT
-                command = f"CONNECT,{user},{server_socket.getsockname()[1]}\0"
+                command = f"CONNECT,{user},{client._server_socket.getsockname()[1]}\0"
                 sock.sendall(command.encode())
                 
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
+                print("RESPUESTA: ",response)
                 # Analizar la respuesta
                 if (response == "0\0"):
                     client._username = user
@@ -137,6 +150,9 @@ class client:
     def disconnect(user) :
         #  Write your code here
         try:
+            if (user is None):
+                print("c> DISCONNECT FAIL")
+                return client.RC.USER_ERROR
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
@@ -149,7 +165,9 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if (response == "0\0"):
+                    
                     client._connected = False
+                    client._thread.join()
                     print("c> DISCONNECT OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -170,6 +188,13 @@ class client:
     def publish(fileName,  description) :
         #  Write your code here
         try:
+            if (fileName is None or description is None):
+                print("c> PUBLISH FAIL")
+                return client.RC.USER_ERROR
+            elif (client._username is None):
+                print("c> PUBLISH FAIL, USER DOES NOT EXIST")
+                return client.RC.USER_ERROR
+            
             # Que el la longitud de nombre se avalida
             if (len(fileName)>256 or len(description)>256):
                 print("c> PUBLISH FAIL")
@@ -211,6 +236,13 @@ class client:
     def delete(fileName) :
         #  Write your code here
         try:
+            if (fileName is None):
+                print("c> DELETE FAIL")
+                return client.RC.USER_ERROR
+            elif (client._username is None):
+                print("c> DELETE FAIL, USER DOES NOT EXIST")
+                return client.RC.USER_ERROR
+            
             # Que el la longitud de nombre se avalida
             if (len(fileName)>256):
                 print("c> DELETE FAIL")
@@ -250,6 +282,10 @@ class client:
     def listusers() :
         #  Write your code here
         try:
+            if (client._username is None):
+                print("c> LIST_USERS FAIL, USER DOES NOT EXIST")
+                return client.RC.USER_ERROR
+        
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
@@ -294,6 +330,13 @@ class client:
     def  listcontent(user) :
         #  Write your code here
         try:
+            if (user is None):
+                print("c> LIST_CONTENT FAIL")
+                return client.RC.USER_ERROR
+            elif (client._username is None):
+                print("c> LIST_CONTENT FAIL, USER DOES NOT EXIST")
+                return client.RC.USER_ERROR
+            
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
@@ -340,7 +383,11 @@ class client:
     @staticmethod
     def  getfile(user,  remote_FileName,  local_FileName) :
         #  Write your code here
-        try:            
+        try:      
+            if (user is None or remote_FileName is None or local_FileName is None or client._username is None):
+                print("c> GET_FILE FAIL")
+                return client.RC.USER_ERROR  
+                
             # Conectarse al servidor para coger el ip y puerto del otro cliente
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
@@ -387,13 +434,54 @@ class client:
             if (os.path.exists(local_FileName)):
                 os.remove(local_FileName)
             return client.RC.USER_ERROR
-    
+    @staticmethod
+    def quit():
+        #  Write your code here
+        try:
+            if (client._username is None):
+                print("c> QUIT FAIL")
+                return client.RC.USER_ERROR
+            # Conectarse al servidor
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((client._server, client._port))
+
+                # Enviar el comando UNREGISTER
+                command = f"UNREGISTER,{client._username}\0"
+                sock.sendall(command.encode())
+
+                # Recibir la respuesta del servidor
+                response = sock.recv(1024).decode().strip()
+                # Analizar la respuesta
+                if (response == "0\0"):
+                    print("c> QUIT OK")
+                    return client.RC.OK
+                else:
+                    print("c> QUIT FAIL")
+                    return client.RC.USER_ERROR
+
+        except Exception as e:
+            print("c> QUIT FAIL")
+            return client.RC.USER_ERROR
+
+
     @staticmethod
     def attendpetitions(server_socket):
         try:
             while client._connected:
                 # Esperar por una conexión entrante
-                client_socket, addr = server_socket.accept()
+                server_socket.settimeout(2)
+                try:
+                    client_socket, addr = server_socket.accept()
+                except socket.timeout:
+                    # Revisar si se ha desconectado mientras esperaba en accept
+                    if not client._connected:
+                        break
+                    continue
+
+                # Restaurar el tiempo de espera a infinito
+                server_socket.settimeout(None)
+
+                print("pasa")
                 print(f"Conexión entrante desde {addr}")
                 try:
                     
@@ -438,17 +526,21 @@ class client:
                         return client.RC.ERROR
                 
                 except Exception:
-                    # Se ha cerrado la conexión por parte del cliente
-                    print(f"La conexión con {addr} ha sido cerrada por el cliente.")
-                    return client.RC.USER_ERROR
-
+                    # Ocurrio algun problema con el otro cliente o las comunicaciones
+                    continue
                 finally:
                     # Cerrar el socket del cliente
                     client_socket.close()
                     return client.RC.USER_ERROR
+                
 
         except Exception as e:
             print("Error en attendpetitions:", str(e))
+            
+        finally:
+            # Cerrar el socket del cliente
+            server_socket.close()
+            return client.RC.USER_ERROR
 
 
     # *
@@ -523,6 +615,7 @@ class client:
 
                     elif(line[0]=="QUIT") :
                         if (len(line) == 1) :
+                            client.quit()
 
                             # Aqui si esta conectado deberia desconectarse
 

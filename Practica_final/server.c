@@ -24,7 +24,7 @@ LIST_CONTENT    (UserName)
 char **users;
 char **clients_ip;
 char **client_socket;
-int *conexions;
+char **conexions;
 int registered = 0; // Numero de clientes registrados
 int connected = 0;  // Numero de clientes conectados
 
@@ -47,20 +47,11 @@ void tratar_mensaje(int  *socket) {
     pthread_mutex_lock(&mutex_mensaje);
     sc = (*(int *) socket);
     inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
-    printf("IP = %s\n", client_ip);
     // Una vez copiado el mensaje, se reanuda el hilo padre
     mensaje_no_copiado = false;
 
     pthread_cond_signal(&cond_mensaje);
     pthread_mutex_unlock(&mutex_mensaje);
-
-    
-    for (int i = 0; i < registered; i++){
-        printf("Usuario %i = %s\n", i, users[i]);
-    }
-    for (int i = 0; i < connected; i++){
-        printf("Client_socket = %s, Client_ip = %s\n", client_socket[i], clients_ip[i]);
-    }
 
 
     for(;;){
@@ -72,10 +63,8 @@ void tratar_mensaje(int  *socket) {
             break;
         }
         token = strtok(message, ",");
-        printf("%s",token);
-        printf("Pre\n");
+        printf("%s\n",token);
         if(strcmp(token, "REGISTER") == 0){
-            printf("Post\n");
 
             // Se hace la operación register
             int size;
@@ -130,7 +119,9 @@ void tratar_mensaje(int  *socket) {
                 users[i] = users[i + 1];
             }
             registered--;
-            users = realloc(users, registered * sizeof(char *));
+            if (registered != 0){
+                users = realloc(users, registered * sizeof(char *));
+            }
             if (users == NULL){
                 strcpy(resultado, "2");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
@@ -146,10 +137,14 @@ void tratar_mensaje(int  *socket) {
         else if (strcmp(token, "CONNECT") == 0){
             token = strtok(NULL, ",");
             int index = -1;
-
             for (int i = 0; i < registered; i ++){
-                if (strcmp(users[i], token)){
+                if (strcmp(users[i], token) == 0){
                     index = i;
+                }
+            }
+            for (int i = 0; i < connected; i++){
+                if (strcmp(conexions[i], token) == 0){
+                    strcpy(resultado, "2");
                 }
             }
             if (index == -1){
@@ -158,22 +153,21 @@ void tratar_mensaje(int  *socket) {
                     pthread_exit(0);
                 }
             }
-            for (int i = 0; i < connected; i++){
-                if (conexions[i] == index){
-                    strcpy(resultado, "2");
-                }
-            }
-            if(strcmp(resultado, "2")){
+            
+            else if(strcmp(resultado, "2") == 0){
+
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                     pthread_exit(0);
                 }
             }
-
             else{
                 connected++;
-                conexions = realloc(conexions, connected * sizeof(int));
-                conexions[connected - 1] = index;
+                conexions = realloc(conexions, connected * sizeof(char*));
+                conexions[connected - 1] = (char*) malloc ((sizeof(token) + 1) * sizeof(char));
+                strcpy(conexions[connected - 1], token);
+                printf("core?\n");
                 clients_ip = realloc(clients_ip, connected * sizeof(char *));
+                printf("core?\n");
                 clients_ip[connected - 1] = (char *) malloc((sizeof(client_ip) + 1) * sizeof(char));
                 strcpy(clients_ip[connected - 1], client_ip);
                 token = strtok(NULL, ",");
@@ -185,6 +179,62 @@ void tratar_mensaje(int  *socket) {
                     pthread_exit(0);
                 }
             }
+        }
+        else if (strcmp(token, "DISCONNECT") == 0){
+            int conectado = -1;
+            int registrado = -1;
+            token = strtok(NULL, ",");
+            for(int i = 0; i < registered;i++){
+                // Buscamos si el usuario está registrado
+                if (strcmp(users[i], token) == 0){
+                    registrado = i;
+                }
+            }
+            for (int i = 0; i < connected; i++){
+                // Buscamos si el usuario está conectado
+                if (strcmp(conexions[i], token) == 0){
+                    conectado = i;
+                }
+            }
+            printf("Conectado: %d, registrado%d\n", conectado, registrado);
+            if (registrado == -1){
+                // Si el usuario no está conectado
+                strcpy(resultado, "1");
+            }
+            else if (conectado == -1){
+                // Si el usuario no está conectado
+                strcpy(resultado, "2");
+            }
+            else{
+                // Desconectamos al usuario
+                free(conexions[conectado]);
+                printf("core\n");
+                free(clients_ip[conectado]);
+                printf("core\n");
+                free(client_socket[conectado]);
+                printf("core\n");
+                for (int i = conectado; i < connected -1; i++){
+                    conexions[i] = conexions[i + 1];
+                    clients_ip[i] = clients_ip[i + 1];
+                    client_socket[i] = client_socket[i + 1];
+                }
+                printf("core\n");
+                connected--;
+                if (connected != 0){
+                    conexions = realloc(conexions, connected * sizeof(char*));
+                    clients_ip = realloc(clients_ip, connected * sizeof(char*));
+                    client_socket = realloc(client_socket, connected * sizeof(char*));
+                }
+                printf("core\n");
+                if (conexions == NULL){
+                    strcpy(resultado, "3");
+                }
+            }
+            if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                    pthread_exit(0);
+            }
+            printf("CORE\n");
+            
         }
 
     }
