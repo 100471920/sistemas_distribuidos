@@ -21,6 +21,7 @@ class client:
     _server = None
     _port = -1
     _username = None
+    _connected = False
     # ******************** METHODS *******************
     
 
@@ -98,7 +99,8 @@ class client:
         # 2 enviar cadena CONNECT, <user_name>, str<puerto>
         try:
             server_socket = find_free_port()
-            file_thread = threading.Thread(target=client.attendpetitions, args=(server_socket))
+            client._connected = True
+            file_thread = threading.Thread(target=client.attendpetitions, args=(server_socket,))
             file_thread.start()
         
             # Conectarse al servidor
@@ -106,9 +108,9 @@ class client:
                 sock.connect((client._server, client._port))
 
                 # Enviar el comando CONNECT
-                command = f"CONNECT,{user},{server_socket}\0"
+                command = f"CONNECT,{user},{server_socket.getsockname()[1]}\0"
                 sock.sendall(command.encode())
-
+                
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
@@ -127,7 +129,7 @@ class client:
                     return client.RC.USER_ERROR
 
         except Exception as e:
-            print("c> CONNECT FAIL",e)
+            print("c> CONNECT FAIL")
             return client.RC.USER_ERROR
 
     
@@ -147,6 +149,7 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if (response == "0\0"):
+                    client._connected = False
                     print("c> DISCONNECT OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -251,7 +254,7 @@ class client:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
 
-                # Enviar el comando UNREGISTER
+                # Enviar el comando LIST_USERS
                 command = f"LIST_USERS,{client._username}\0"
                 sock.sendall(command.encode())
 
@@ -295,8 +298,8 @@ class client:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
 
-                # Enviar el comando LIST_USERS
-                command = f"LIST_USERS,{client._username},{user}\0"
+                # Enviar el comando LIST_CONTENT
+                command = f"LIST_CONTENT,{client._username},{user}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -343,7 +346,7 @@ class client:
                 sock.connect((client._server, client._port))
 
                 # Enviar el comando GET_FILE
-                command = f"GET_FILE,{user}\0"
+                command = f"GET_FILE,{client._username},{user}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -388,7 +391,7 @@ class client:
     @staticmethod
     def attendpetitions(server_socket):
         try:
-            while True:
+            while client._connected:
                 # Esperar por una conexión entrante
                 client_socket, addr = server_socket.accept()
                 print(f"Conexión entrante desde {addr}")
