@@ -297,7 +297,7 @@ class client:
                 received_data = b""
                 while True:
                     data = sock.recv(1)
-                    if (data.decode() == "$"):
+                    if (data.decode() == "\0"):
                         break
                     received_data += data
 
@@ -347,28 +347,32 @@ class client:
                 # Recibir la respuesta del servidor
                 received_data = b""
                 while True:
-                    data = sock.recv(1024)
-                    if (not data):
+                    data = sock.recv(1)
+                    if (data.decode() == "\0"):
                         break
                     received_data += data
 
                 # Decodificar y procesar los datos recibidos
                 response = received_data.decode().strip()
                 parts = response.split(",")
+
                 # Analizar la respuesta
-                if (parts[0] == "0\0"):
+                if (parts[0] == "0" and len(parts) < 3):
+                    print("c> LIST_CONTENT OK prueba")
+                    return client.RC.OK
+                elif (parts[0] == "0"):
                     print("c> LIST_CONTENT OK")
                     for i in range(1, len(parts), 2):
-                        print(parts[i] + '"' + parts[i+1] + '"')
+                        print("\t" + parts[i] + ' "' + parts[i+1] + '"')
                         
                     return client.RC.OK
-                elif (parts[0] == "1\0"):
+                elif (parts[0] == "1"):
                     print("c> LIST_CONTENT FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
-                elif (parts[0] == "2\0"):
+                elif (parts[0] == "2"):
                     print("c> LIST_CONTENT FAIL, USER NOT CONNECTED")
                     return client.RC.ERROR
-                elif (parts[0] == "3\0"):
+                elif (parts[0] == "3"):
                     print("c> LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST")
                     return client.RC.ERROR
                 else:

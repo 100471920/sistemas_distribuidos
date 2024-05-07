@@ -482,9 +482,8 @@ void tratar_mensaje(int  *socket) {
                     total_size += strlen(clients_ip[i]);
                     total_size++; // Deja espacio para una coma
                     total_size += strlen(client_socket[i]);
-                    total_size++; // En la ultima iteracion será un caracter para señalizar el final y en el resto comas
+                    total_size++; // \0 señalizando final y , en el resto
                 }
-                total_size++; // Final de string \0
                 char to_send[total_size];
                 strcpy(to_send, "");
                 printf("TO_SEND = %s\n", to_send);
@@ -498,10 +497,88 @@ void tratar_mensaje(int  *socket) {
                     strcat(to_send, client_socket[i]);
                     if (i != connected - 1){
                         strcat(to_send, ",");
-                        }
-                    else{
-                        strcat(to_send, "$");
-                        }
+                        } 
+                }
+                printf("TO_SEND = %s\n", to_send);
+                if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+
+        }
+        else if (strcmp(token, "LIST_CONTENT") == 0){
+            // Seleccionamos el usuario
+            token = strtok(NULL, ",");
+            int registrado = -1;
+            int registrado_2 = -1;
+            for (int i = 0; i < registered;i++){
+                // Buscamos si el usuario está registrado
+                if (strcmp(users[i], token) == 0){
+                    registrado = i;
+                }
+            }
+            int conectado = -1;
+            for (int i = 0; i < connected; i++){
+                // Buscamos no si el usuario está conectado
+                if (strcmp(conexions[i], token) == 0){
+                    conectado = i;
+                }
+            }
+            token = strtok(NULL, ",");
+            for (int i = 0; i < registered;i++){
+                // Buscamos si el usuario está registrado
+                if (strcmp(users[i], token) == 0){
+                    registrado_2 = i;
+                }
+            }
+            if (registrado == -1){
+                // Error no está registrado
+                strcpy(resultado, "1");
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+            else if (conectado == -1){
+                // Error no está conectado
+                strcpy(resultado, "2");
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+            else if (registrado_2 == -1){
+                // Error no está conectado
+                strcpy(resultado, "3");
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+            else{
+                strcpy(resultado, "0");
+                // Calculamos lo larga que va a ser nuestra cadena de texto
+                int total_size = strlen(resultado);
+                total_size++; // Deja espacio para una coma
+                for (int i = 0; i < num_files; i++){
+                    if (strcmp(token, authors[i]) == 0){
+                        total_size += strlen(file_names[i]);
+                        total_size++; // Deja espacio para una coma
+                        total_size += strlen(descriptions[i]);
+                        total_size++; // \0 señalizando final y , en el resto
+                    }
+                }
+                char to_send[total_size];
+                strcpy(to_send, "");
+                printf("TO_SEND = %s\n", to_send);
+                // Concatenamos el resultado final
+                strcat(to_send, "0,");
+                for (int i = 0; i < num_files; i++){
+                     if (strcmp(token, authors[i]) == 0){
+                    strcat(to_send, file_names[i]);
+                    strcat(to_send, ",");
+                    strcat(to_send, descriptions[i]);
+                    if (i != num_files - 1){
+                        strcat(to_send, ",");
+                        } 
+                    }
                 }
                 printf("TO_SEND = %s\n", to_send);
                 if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
