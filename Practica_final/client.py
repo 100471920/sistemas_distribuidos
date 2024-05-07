@@ -67,7 +67,7 @@ class client:
         #  Write your code here
         try:
             if (user is None):
-                print("c> UNREGISTER FAIL")
+                print("c> USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -107,7 +107,7 @@ class client:
         # 2 enviar cadena CONNECT, <user_name>, str<puerto>
         try:
             if (user is None):
-                print("c> CONNECT FAIL")
+                print("c> CONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
             
             client._server_socket = find_free_port()
@@ -125,7 +125,6 @@ class client:
                 
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
-                print("RESPUESTA: ",response)
                 # Analizar la respuesta
                 if (response == "0\0"):
                     client._username = user
@@ -151,7 +150,7 @@ class client:
         #  Write your code here
         try:
             if (user is None):
-                print("c> DISCONNECT FAIL")
+                print("c> DISCONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -297,8 +296,8 @@ class client:
                 # Recibir la respuesta del servidor
                 received_data = b""
                 while True:
-                    data = sock.recv(1024)
-                    if (not data):
+                    data = sock.recv(1)
+                    if (data.decode() == "$"):
                         break
                     received_data += data
 
@@ -306,16 +305,16 @@ class client:
                 response = received_data.decode().strip()
                 parts = response.split(",")
                 # Analizar la respuesta
-                if (parts[0] == "0\0"):
+                if (parts[0] == "0"):
                     print("c> LIST_USERS OK")
                     for i in range(1, len(parts), 3):
-                        print(parts[i] + parts[i+1] + parts[i+2])
+                        print(parts[i] + " " + parts[i+1] + " " + parts[i+2])
                         
                     return client.RC.OK
-                elif (parts[0] == "1\0"):
+                elif (parts[0] == "1"):
                     print("c> LIST_USERS FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
-                elif (parts[0] == "2\0"):
+                elif (parts[0] == "2"):
                     print("c> LIST_USERS FAIL, USER NOT CONNECTED")
                     return client.RC.ERROR
                 else:
@@ -481,7 +480,6 @@ class client:
                 # Restaurar el tiempo de espera a infinito
                 server_socket.settimeout(None)
 
-                print("pasa")
                 print(f"Conexión entrante desde {addr}")
                 try:
                     
@@ -534,8 +532,11 @@ class client:
                     return client.RC.USER_ERROR
                 
 
-        except Exception as e:
-            print("Error en attendpetitions:", str(e))
+        except Exception:
+            #print("Error en attendpetitions:", str(e))
+            # Cerrar el socket del cliente
+            client_socket.close()
+            return client.RC.USER_ERROR
             
         finally:
             # Cerrar el socket del cliente
