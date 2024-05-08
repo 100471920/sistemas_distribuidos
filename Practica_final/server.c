@@ -57,19 +57,20 @@ void tratar_mensaje(int  *socket) {
     pthread_cond_signal(&cond_mensaje);
     pthread_mutex_unlock(&mutex_mensaje);
 
-
     for(;;){
         int err = recv(sc, (char *) &message, 533, 0);   // recibe la operación
         strcpy(resultado, "0");
 
         if (err == -1) {
-            printf("Error en recepción\n");
+            printf("Reception error\ns> ");
             continue;
         } else if(err == 0){
             break;
         }
         // Cojemos el primer valor del mensaje (operación a realizar)
         token = strtok(message, ",");
+        printf("%s\ns> ", token);
+
         if(strcmp(token, "REGISTER") == 0){
             // Se hace la operación register
             int size;
@@ -79,7 +80,7 @@ void tratar_mensaje(int  *socket) {
                 // Se busca si el usuario está registrado anteriormente
                 if (strcmp(token, users[i]) == 0){
                     strcpy(resultado, "1");
-                    printf("usuario existe\n");
+                    printf("User already exist\ns> ");
                     if(send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                         pthread_exit(0);
                     }
@@ -91,7 +92,7 @@ void tratar_mensaje(int  *socket) {
                 char ** aux = realloc(users, registered * sizeof(char*));
                 if (aux == NULL) {
                     // Si falla la reserva de memoria se resetea
-                    printf("Memory allocation failed\n");
+                    printf("Memory allocation failed\ns> ");
                     strcpy(resultado, "2");
                     registered--;
                     if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
@@ -100,7 +101,6 @@ void tratar_mensaje(int  *socket) {
                 }
                 else{
                     users = aux;
-                    printf("users = %p\n", users);
                     users[registered - 1] = (char *) malloc((strlen(token) + 1) * sizeof(char));
                     strcpy(users[registered - 1], token);
                     if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
@@ -565,7 +565,6 @@ void tratar_mensaje(int  *socket) {
                 }
                 char to_send[total_size];
                 strcpy(to_send, "");
-                printf("TO_SEND = %s\n", to_send);
                 // Concatenamos el resultado final
                 strcat(to_send, "0,");
                 for (int i = 0; i < num_files; i++){
@@ -578,7 +577,6 @@ void tratar_mensaje(int  *socket) {
                         } 
                     }
                 }
-                printf("TO_SEND = %s\n", to_send);
                 if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
                 pthread_exit(0);
             }
@@ -587,10 +585,6 @@ void tratar_mensaje(int  *socket) {
         }else if (strcmp(token, "GET_FILE") == 0){
             // Seleccionamos el usuario
             // Comprobaciones usuario principal
-            printf("esta entrando\n");
-            for (int i = 0;i < connected;i++){
-                printf("%s",conexions[i]);
-            }
             token = strtok(NULL, ",");
             int registrado = -1;
             for (int i = 0; i < registered;i++){
@@ -663,14 +657,12 @@ void tratar_mensaje(int  *socket) {
                 
                 char to_send[total_size];
                 strcpy(to_send, "");
-                printf("TO_SEND = %s\n", to_send);
                 // Concatenamos el resultado final
                 strcat(to_send, "0,");
                 strcat(to_send, clients_ip[conectado]);
                 strcat(to_send, ",");
                 strcat(to_send, client_socket[conectado]);
                     
-                printf("TO_SEND = %s\n", to_send);
                 if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
                 pthread_exit(0);
             }
@@ -684,7 +676,7 @@ void tratar_mensaje(int  *socket) {
 
 
 int main(int argc, char *argv[]){
-
+    printf("s> ");
     int puerto = atoi(argv[1]);
 
     pthread_attr_t t_attr;		// atributos de los threads
@@ -713,14 +705,14 @@ int main(int argc, char *argv[]){
 
     err = bind(sd, (const struct sockaddr *) &server_addr,sizeof(server_addr));
     if (err == -1) {
-        printf("Error en bind, revisa que otro programa no este ocupando el puerto selecionado\n");
+        printf("Bind error, port may be in use\ns> ");
         exit(-1);
     }
 
     err = listen(sd, SOMAXCONN);
     // Esto hace que el socket tenga un numero maximo de peticiones de conexion
     if (err == -1) {
-        printf("Error en listen\n");
+        printf("Error at listen\ns> ");
         return -1;
     }
 
@@ -734,9 +726,8 @@ int main(int argc, char *argv[]){
 
     while(1) {
         sc = accept(sd, (struct sockaddr *) &client_addr, (socklen_t *) &size); // Genera internamente otro puerto donde recibe los mensajes
-        printf("s>");
         if (sc == -1) {
-            printf("Error en accept\n");
+            printf("Error at accept\ns> ");
             return -1;
         }
         if (pthread_create(&thid, &t_attr, (void *)tratar_mensaje, &sc) == 0) {

@@ -114,6 +114,9 @@ class client:
             if (user is None):
                 print("c> CONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
+            elif (client._username == user):
+                print("c> CONNECT FAIL, USER ALREADY CONNECTED")
+                return client.RC.USER_ERROR
             elif not (client._username is None):
                 print("c> CONNECT FAIL, ONE CONNECTED USER PER TERMINAL")
                 return client.RC.USER_ERROR
@@ -142,7 +145,7 @@ class client:
                     print("c> CONNECT FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
                 elif (response == "2\0"):
-                    print("c> USER ALREADY CONNECTED")
+                    print("c> CONNECT FAIL, USER ALREADY CONNECTED")
                     return client.RC.ERROR
                 else:
                     print("c> CONNECT FAIL")
