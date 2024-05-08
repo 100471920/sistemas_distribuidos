@@ -9,47 +9,6 @@ import copy
 
 
 
-class pila():
-    def __init__(self):
-        self.pila = []
-    def is_connected(self, name):
-        return name in self.pila
-
-    def push(self, name):
-        """
-        Añade un usuario en lo alto de la pila
-        """
-        self.pila.append(name)
-
-    def get_last(self):
-        """
-        Devuelve el usuario más arriba de la pila
-        """
-        return self.pila[-1]
-
-    def get_all(self):
-        """
-        Vacia la pila y la devuelve como parámetro
-        """
-        a = copy.deepcopy(self.pila)
-        del(self.pila[:])
-        return a
-    def disconnect(self, name):
-        """
-        Elimina un elemento exacto de la pila
-        Devuelve True si lo encuentra y False si no está en la pila
-        """
-        a = len(self.pila)
-        i = 0
-        while i < a:
-            if self.pila[i] == name:
-                del(self.pila[i])
-                a -= 1
-                i -= 1
-            i +=1
-        
-
-
 class client:
 
     # ******************** TYPES *********************
@@ -63,11 +22,11 @@ class client:
     # ****************** ATTRIBUTES ******************
     _server = None
     _port = -1
+    _reg_username = None
     _username = None
     _connected = False
     _thread = None
     _server_socket = None
-    _pila_users = pila()
     # ******************** METHODS *******************
     
 
@@ -91,7 +50,7 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if (response == "0\0"):
-                    client._username = user
+                    client.reg_username = user
                     print("c> REGISTER OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -125,6 +84,7 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if (response == "0\0"):
+                    client.reg_username = None
                     print("c> UNREGISTER OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -153,6 +113,9 @@ class client:
             if (user is None):
                 print("c> CONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
+            elif not (client._username is None):
+                print("c> CONNECT FAIL, ONE CONNECTED USER PER TERMINAL")
+                return client.RC.USER_ERROR
                   
             client._server_socket = find_free_port()
             client._connected = True
@@ -172,7 +135,6 @@ class client:
                 # Analizar la respuesta
                 if (response == "0\0"):
                     client._username = user
-                    client._pila_users.push(user)
                     print("c> CONNECT OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -197,9 +159,6 @@ class client:
             if (user is None):
                 print("c> DISCONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
-            elif not (client._pila_users.is_connected(user)):
-                print("c> DISCONNECT FAIL")
-                return client.RC.USER_ERROR
 
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -215,9 +174,9 @@ class client:
                 if (response == "0\0"):
                     
                     client._connected = False
-                    client._pila_users.disconnect(user)
                     client._thread.join()
                     client._thread = None
+                    client._username = None
                     print("c> DISCONNECT OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -241,9 +200,13 @@ class client:
             if (fileName is None or description is None):
                 print("c> PUBLISH FAIL")
                 return client.RC.USER_ERROR
-            elif (client._username is None):
+            elif (client._reg_username is None and client._username is None):
                 print("c> PUBLISH FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
+            elif (client._username is None):
+                print("c> PUBLISH FAIL, USER NOT CONNECTED")
+                return client.RC.USER_ERROR
+            
             
             # Que el la longitud de nombre se avalida
             if (len(fileName)>256 or len(description)>256):
@@ -289,9 +252,14 @@ class client:
             if (fileName is None):
                 print("c> DELETE FAIL")
                 return client.RC.USER_ERROR
-            elif (client._username is None):
+            elif (client._reg_username is None and client._username is None):
                 print("c> DELETE FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
+            elif (client._username is None):
+                print("c> DELETE FAIL, USER NOT CONNECTED")
+                return client.RC.USER_ERROR
+
+
             
             # Que el la longitud de nombre se avalida
             if (len(fileName)>256):
@@ -332,8 +300,11 @@ class client:
     def listusers() :
         #  Write your code here
         try:
-            if (client._username is None):
+            if (client._reg_username is None and client._username is None):
                 print("c> LIST_USERS FAIL, USER DOES NOT EXIST")
+                return client.RC.USER_ERROR
+            elif (client._username is None):
+                print("c> LIST_USERS FAIL, USER NOT CONNECTED")
                 return client.RC.USER_ERROR
         
             # Conectarse al servidor
@@ -383,10 +354,13 @@ class client:
             if (user is None):
                 print("c> LIST_CONTENT FAIL")
                 return client.RC.USER_ERROR
-            elif (client._username is None):
+            elif (client._reg_username is None and client._username is None):
                 print("c> LIST_CONTENT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
-            
+            elif (client._username is None):
+                print("c> LIST_CONTENT FAIL, USER NOT CONNECTED")
+                return client.RC.USER_ERROR
+
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
@@ -444,9 +418,15 @@ class client:
     def  getfile(user,  remote_FileName,  local_FileName) :
         #  Write your code here
         try:      
-            if (user is None or remote_FileName is None or local_FileName is None or client._username is None):
+            if (user is None or remote_FileName is None or local_FileName is None):
                 print("c> GET_FILE FAIL")
                 return client.RC.USER_ERROR  
+            elif (client._reg_username is None and client._username is None):
+                print("c> GET_FILE FAIL, USER DOES NOT EXIST")
+                return client.RC.USER_ERROR
+            elif (client._username is None):
+                print("c> GET_FILE FAIL, USER NOT CONNECTED")
+                return client.RC.USER_ERROR
                 
             # Conectarse al servidor para coger el ip y puerto del otro cliente
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -508,23 +488,22 @@ class client:
         #  Write your code here
         try:
             if (client._username is None):
-                print("c> QUIT FAIL")
-                return client.RC.USER_ERROR
+                print("c> QUIT OK")
+                return client.RC.OK
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
-                sum_response = 0
 
-                # Enviar el comando DISCONNECT PARA TODOS
-                for i in client._pila_users.get_all():
-                    command = f"DISCONNECT,{i}\0"
-                    sock.sendall(command.encode())
-                    # Recibir la respuesta del servidor
-                    sum_response += int(sock.recv(1024).decode().strip().rstrip('\x00'))
+    
+                command = f"DISCONNECT,{client._username}\0"
+                sock.sendall(command.encode())
+
+                response= sock.recv(1024).decode().strip()
 
                 # Analizar la respuesta
-                print(sum_response)
-                if (sum_response == 0):
+                if (response == "0\0"):
+                    client._connected = False
+                    client._thread.join()
                     print("c> QUIT OK")
                     return client.RC.OK
                 else:
