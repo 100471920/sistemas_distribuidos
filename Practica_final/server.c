@@ -41,14 +41,15 @@ struct sockaddr_in client_addr;
 
 
 void tratar_mensaje(int  *socket) {
-    char client_ip[INET_ADDRSTRLEN];
-    char resultado[2];
+    char client_ip[INET_ADDRSTRLEN]; // IP del cliente que manda el mensaje
+    char resultado[2]; // Variable que almacena el resultado en caso de que este sea solo un número
     strcpy(resultado, "0");
     int sc; // Descriptor del socket de escucha 
-    char message[533];
-    char *token;
+    char message[800]; // Almacenamos el mensaje en una variable suficientemente grande
+    char *token; // Variable que va a ir deserializando el mensaje
     // Copiamos el descriptor pasado como parámetro
     pthread_mutex_lock(&mutex_mensaje);
+    // Copiamos el socket desde el que se recibe el mensaje y la ip del cliente
     sc = (*(int *) socket);
     inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN);
     // Una vez copiado el mensaje, se reanuda el hilo padre
@@ -58,9 +59,6 @@ void tratar_mensaje(int  *socket) {
 
 
     for(;;){
-        for (int i = 0; i < num_files; i++){
-            printf("Nombre fichero %s\tDescripcion = %s\n", file_names[i], descriptions[i]);
-        }
         int err = recv(sc, (char *) &message, 533, 0);   // recibe la operación
         strcpy(resultado, "0");
 
@@ -70,16 +68,15 @@ void tratar_mensaje(int  *socket) {
         } else if(err == 0){
             break;
         }
+        // Cojemos el primer valor del mensaje (operación a realizar)
         token = strtok(message, ",");
-        printf("%s\n",token);
         if(strcmp(token, "REGISTER") == 0){
-
             // Se hace la operación register
             int size;
             token = strtok(NULL, ",");
             size = strlen(token);
-            printf("token = %s\n", token);
             for(int i = 0; i < registered; i++){
+                // Se busca si el usuario está registrado anteriormente
                 if (strcmp(token, users[i]) == 0){
                     strcpy(resultado, "1");
                     printf("usuario existe\n");
@@ -89,21 +86,27 @@ void tratar_mensaje(int  *socket) {
                 }
             }
             if (strcmp(resultado, "0") == 0){
-            registered++;
-            users = realloc(users, registered * sizeof(char*));
-            if (users == NULL) {
-                printf("Memory allocation failed\n");
-                strcpy(resultado, "2");
-                registered--;
-                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                    pthread_exit(0);
+                // Si no está registrado se le registra
+                registered++;
+                char ** aux = realloc(users, registered * sizeof(char*));
+                if (aux == NULL) {
+                    // Si falla la reserva de memoria se resetea
+                    printf("Memory allocation failed\n");
+                    strcpy(resultado, "2");
+                    registered--;
+                    if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                        pthread_exit(0);
+                    }
                 }
-            }
-            users[registered - 1] = (char *) malloc((strlen(token) + 1) * sizeof(char));
-            strcpy(users[registered - 1], token);
-            if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+                else{
+                    users = aux;
+                    printf("users = %p\n", users);
+                    users[registered - 1] = (char *) malloc((strlen(token) + 1) * sizeof(char));
+                    strcpy(users[registered - 1], token);
+                    if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                        pthread_exit(0);
+                    }
+                }
             }
 
         }
@@ -242,13 +245,12 @@ void tratar_mensaje(int  *socket) {
                     conectado = i;
                 }
             }
-            printf("Conectado: %d, registrado%d\n", conectado, registrado);
             if (registrado == -1){
-                // Si el usuario no está conectado
+                // Si el usuario no está registrado
                 strcpy(resultado, "1");
             }
             else if (conectado == -1){
-                // Si el usuario no está conectado
+                // Si el usuario está conectado
                 strcpy(resultado, "2");
             }
             else{
@@ -297,7 +299,6 @@ void tratar_mensaje(int  *socket) {
             int uploaded = -1;
             // Seleccionamos el nombre del fichero
             token = strtok(NULL, ",");
-            printf("Token = %s|\n", token);
 
             for (int i = 0; i < num_files;i++){
                 if ((strcmp(file_names[i], token) == 0) && (strcmp(conexions[conectado], authors[i]) == 0)){
@@ -394,7 +395,6 @@ void tratar_mensaje(int  *socket) {
                 int uploaded = -1;
                 // Seleccionamos el nombre del fichero
                 token = strtok(NULL, ",");
-                printf("Token = %s|\n", token);
 
                 for (int i = 0; i < num_files;i++){
                     if ((strcmp(file_names[i], token) == 0) && (strcmp(conexions[conectado], authors[i]) == 0)){
@@ -486,7 +486,6 @@ void tratar_mensaje(int  *socket) {
                 }
                 char to_send[total_size];
                 strcpy(to_send, "");
-                printf("TO_SEND = %s\n", to_send);
                 // Concatenamos el resultado final
                 strcat(to_send, "0,");
                 for (int i = 0; i < connected; i++){
@@ -499,7 +498,6 @@ void tratar_mensaje(int  *socket) {
                         strcat(to_send, ",");
                         } 
                 }
-                printf("TO_SEND = %s\n", to_send);
                 if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
                 pthread_exit(0);
             }
@@ -586,6 +584,98 @@ void tratar_mensaje(int  *socket) {
             }
             }
 
+        }else if (strcmp(token, "GET_FILE") == 0){
+            // Seleccionamos el usuario
+            // Comprobaciones usuario principal
+            printf("esta entrando\n");
+            for (int i = 0;i < connected;i++){
+                printf("%s",conexions[i]);
+            }
+            token = strtok(NULL, ",");
+            int registrado = -1;
+            for (int i = 0; i < registered;i++){
+                // Buscamos si el usuario está registrado
+                if (strcmp(users[i], token) == 0){
+                    registrado = i;
+                }
+            }
+            int conectado = -1;
+            for (int i = 0; i < connected; i++){
+                // Buscamos no si el usuario está conectado
+                if (strcmp(conexions[i], token) == 0){
+                    conectado = i;
+                }
+            }
+            if (registrado == -1){
+                // Error no está registrado
+                strcpy(resultado, "1");
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+            else if (conectado == -1){
+                // Error no está conectado
+                strcpy(resultado, "4");
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+
+            // Comprobaciones usuario objetivo
+            token = strtok(NULL, ",");
+            registrado = -1;
+            for (int i = 0; i < registered;i++){
+                // Buscamos si el usuario está registrado
+                if (strcmp(users[i], token) == 0){
+                    registrado = i;
+                }
+            }
+            conectado = -1;
+            for (int i = 0; i < connected; i++){
+                // Buscamos no si el usuario está conectado
+                if (strcmp(conexions[i], token) == 0){
+                    conectado = i;
+                }
+            }
+            if (registrado == -1){
+                // Error no está registrado
+                strcpy(resultado, "3");
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+            else if (conectado == -1){
+                // Error no está conectado
+                strcpy(resultado, "4");
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+            else{
+                strcpy(resultado, "0");
+                // Calculamos lo larga que va a ser nuestra cadena de texto
+                int total_size = strlen(resultado);
+                total_size++; // Deja espacio para una coma
+                total_size += strlen(clients_ip[conectado]);
+                total_size++; // Deja espacio para una coma
+                total_size += strlen(client_socket[conectado]);
+                total_size++; // \0 señalizando final
+                
+                char to_send[total_size];
+                strcpy(to_send, "");
+                printf("TO_SEND = %s\n", to_send);
+                // Concatenamos el resultado final
+                strcat(to_send, "0,");
+                strcat(to_send, clients_ip[conectado]);
+                strcat(to_send, ",");
+                strcat(to_send, client_socket[conectado]);
+                    
+                printf("TO_SEND = %s\n", to_send);
+                if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
+                pthread_exit(0);
+            }
+            }
+
         }
     }
     
@@ -644,6 +734,7 @@ int main(int argc, char *argv[]){
 
     while(1) {
         sc = accept(sd, (struct sockaddr *) &client_addr, (socklen_t *) &size); // Genera internamente otro puerto donde recibe los mensajes
+        printf("s>");
         if (sc == -1) {
             printf("Error en accept\n");
             return -1;

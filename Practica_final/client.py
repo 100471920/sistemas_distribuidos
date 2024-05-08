@@ -3,8 +3,51 @@ import argparse
 import socket
 import threading
 import os
+import copy
 
 # ****************** ATTRIBUTES ******************
+
+
+
+class pila():
+    def __init__(self):
+        self.pila = []
+    def is_connected(self, name):
+        return name in self.pila
+
+    def push(self, name):
+        """
+        Añade un usuario en lo alto de la pila
+        """
+        self.pila.append(name)
+
+    def get_last(self):
+        """
+        Devuelve el usuario más arriba de la pila
+        """
+        return self.pila[-1]
+
+    def get_all(self):
+        """
+        Vacia la pila y la devuelve como parámetro
+        """
+        a = copy.deepcopy(self.pila)
+        del(self.pila[:])
+        return a
+    def disconnect(self, name):
+        """
+        Elimina un elemento exacto de la pila
+        Devuelve True si lo encuentra y False si no está en la pila
+        """
+        a = len(self.pila)
+        i = 0
+        while i < a:
+            if self.pila[i] == name:
+                del(self.pila[i])
+                a -= 1
+                i -= 1
+            i +=1
+        
 
 
 class client:
@@ -24,6 +67,7 @@ class client:
     _connected = False
     _thread = None
     _server_socket = None
+    _pila_users = pila()
     # ******************** METHODS *******************
     
 
@@ -109,7 +153,7 @@ class client:
             if (user is None):
                 print("c> CONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
-            
+                  
             client._server_socket = find_free_port()
             client._connected = True
             client._thread = threading.Thread(target=client.attendpetitions, args=(client._server_socket,))
@@ -128,6 +172,7 @@ class client:
                 # Analizar la respuesta
                 if (response == "0\0"):
                     client._username = user
+                    client._pila_users.push(user)
                     print("c> CONNECT OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -152,6 +197,10 @@ class client:
             if (user is None):
                 print("c> DISCONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
+            elif not (client._pila_users.is_connected(user)):
+                print("c> DISCONNECT FAIL")
+                return client.RC.USER_ERROR
+
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
@@ -166,7 +215,9 @@ class client:
                 if (response == "0\0"):
                     
                     client._connected = False
+                    client._pila_users.disconnect(user)
                     client._thread.join()
+                    client._thread = None
                     print("c> DISCONNECT OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -180,7 +231,7 @@ class client:
                     return client.RC.USER_ERROR
 
         except Exception as e:
-            print("c> DISCONNECT FAIL")
+            print("c> DISCONNECT FAIL ",e)
             return client.RC.USER_ERROR
 
     @staticmethod
@@ -357,24 +408,30 @@ class client:
                 parts = response.split(",")
 
                 # Analizar la respuesta
+                # Si no tiene contenido subido pero la operacion es correta
                 if (parts[0] == "0" and len(parts) < 3):
-                    print("c> LIST_CONTENT OK prueba")
+                    print("c> LIST_CONTENT OK")
                     return client.RC.OK
+                # Si tienen contenido publicado y la operacion es correcta
                 elif (parts[0] == "0"):
                     print("c> LIST_CONTENT OK")
                     for i in range(1, len(parts), 2):
                         print("\t" + parts[i] + ' "' + parts[i+1] + '"')
                         
                     return client.RC.OK
+                # Fallo usuario emisor no existe
                 elif (parts[0] == "1"):
                     print("c> LIST_CONTENT FAIL, USER DOES NOT EXIST")
                     return client.RC.ERROR
+                # Fallo usuario emisor no esta conectado
                 elif (parts[0] == "2"):
                     print("c> LIST_CONTENT FAIL, USER NOT CONNECTED")
                     return client.RC.ERROR
+                # Fallo usuario objetivo no existe
                 elif (parts[0] == "3"):
                     print("c> LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST")
                     return client.RC.ERROR
+                # Cualquier otro fallo
                 else:
                     print("c> LIST_CONTENT FAIL")
                     return client.RC.USER_ERROR
@@ -402,37 +459,46 @@ class client:
                 # Recibir la respuesta del servidor
                 response = sock.recv(1024).decode().strip()
                 parts = response.split(",")
+
                 # Analizar la respuesta
-                if (parts[0] == "0\0"):
+                if (parts[0] == "0"):
+                    parts[2]= parts[2].rstrip('\x00')
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as remote_sock:
                         remote_sock.connect((parts[1], int(parts[2])))
-
                         # Enviar el nombre del archivo remoto
                         command = f"GET_FILE,{remote_FileName}\0" 
                         remote_sock.sendall(command.encode())
-
                         response = remote_sock.recv(1024).decode().strip().split(",")
+
                         # Abrir el archivo local para escritura binaria
-                        if (response[0]== "0\0"):
-                            with open(local_FileName, 'wb') as local_file:
+                        if (response[0]== "0"):
+                            script_directory = os.path.dirname(os.path.abspath(__file__))
+                            local_file_directory = "Ficheros"
+                            local_file_path = os.path.join(script_directory, local_file_directory)
+                            
+                            with open(os.path.join(local_file_path, local_FileName), 'wb') as local_file:
                                 # Recibir y escribir los datos del archivo remoto en el archivo local
                                 data = ", ".join(response[1:]) #remote_sock.recv(1024)
                                 while data:
-                                    local_file.write(data)
+                                    local_file.write(data.encode())
                                     data = remote_sock.recv(1024)
 
                             # Imprimir mensaje de éxito
                             print("c> GET_FILE OK")
                             return client.RC.OK
-                        elif (response[0]== "1\0"):
+                        elif (response[0]== "1"):
                             print("GET_FILE FAIL / fILE NOT EXIST")
-                            return client.RC.ERROR             
+                            return client.RC.ERROR 
+                        else:
+                            print("c> GET_FILE FAIL")
+                            return client.RC.USER_ERROR
+
                 else:
                     print("c> GET_FILE FAIL")
                     return client.RC.USER_ERROR
 
         except Exception as e:
-            print("c> GET_FILE FAIL")
+            print("c> GET_FILE FAIL",e)
              #Si la transferencia no se puede completar, borra el archivo local si existe
             if (os.path.exists(local_FileName)):
                 os.remove(local_FileName)
@@ -447,15 +513,18 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                sum_response = 0
 
-                # Enviar el comando UNREGISTER
-                command = f"UNREGISTER,{client._username}\0"
-                sock.sendall(command.encode())
+                # Enviar el comando DISCONNECT PARA TODOS
+                for i in client._pila_users.get_all():
+                    command = f"DISCONNECT,{i}\0"
+                    sock.sendall(command.encode())
+                    # Recibir la respuesta del servidor
+                    sum_response += int(sock.recv(1024).decode().strip().rstrip('\x00'))
 
-                # Recibir la respuesta del servidor
-                response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
-                if (response == "0\0"):
+                print(sum_response)
+                if (sum_response == 0):
                     print("c> QUIT OK")
                     return client.RC.OK
                 else:
@@ -463,7 +532,7 @@ class client:
                     return client.RC.USER_ERROR
 
         except Exception as e:
-            print("c> QUIT FAIL")
+            print("c> QUIT FAIL",e)
             return client.RC.USER_ERROR
 
 
@@ -484,7 +553,7 @@ class client:
                 # Restaurar el tiempo de espera a infinito
                 server_socket.settimeout(None)
 
-                print(f"Conexión entrante desde {addr}")
+               # Conexión entrante desde {addr}
                 try:
                     
                     script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -496,21 +565,22 @@ class client:
                     parts = command.split(",")
 
                     # Analizar el comando
-                    if (parts[0] == "GET_FILE\0"):
+                    if (parts[0] == "GET_FILE"):
                         # Extraer el nombre del archivo local del comando
-                        local_file = parts[1].strip()
-
+                        local_file = parts[1].strip().rstrip('\x00')
                         # Verificar si el archivo local existe en la carpeta banco_archivos
                         if (os.path.exists(os.path.join(local_file_path, local_file))):
 
                             # Abrir y enviar el contenido del archivo al cliente
                             try:
                                 with open(os.path.join(local_file_path, local_file), "rb") as file:
-                                    client_socket.sendall(b"0,")
+                                    enviar=b"0,"
                                     content = file.read(1024)
                                     while content:
-                                        client_socket.sendall(content)
+                                        enviar+=content
                                         content = file.read(1024)
+                                        
+                                    client_socket.sendall(enviar)
                                 return client.RC.OK
      
                             except Exception:
@@ -530,10 +600,6 @@ class client:
                 except Exception:
                     # Ocurrio algun problema con el otro cliente o las comunicaciones
                     continue
-                finally:
-                    # Cerrar el socket del cliente
-                    client_socket.close()
-                    return client.RC.USER_ERROR
                 
 
         except Exception:
@@ -544,7 +610,8 @@ class client:
             
         finally:
             # Cerrar el socket del cliente
-            server_socket.close()
+            if (not client._connected):
+                server_socket.close()
             return client.RC.USER_ERROR
 
 
@@ -688,3 +755,4 @@ def find_free_port():
 
 if __name__=="__main__":
     client.main([])
+    
