@@ -3,7 +3,8 @@ import argparse
 import socket
 import threading
 import os
-import copy
+import zeep
+
 
 # ****************** ATTRIBUTES ******************
 
@@ -28,6 +29,7 @@ class client:
     _connected = False
     _thread = None
     _server_socket = None
+    _client_ws = zeep.Client(wsdl="http://localhost:8000/?wsdl")
     # ******************** METHODS *******************
     
 
@@ -76,6 +78,10 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                
+                # Se imprime fecha y hora (se deberia enviar) #################
+                current_time = client._client_ws.service.get_current_time()
+                print("Hora y fecha actual:", current_time)
 
                 # Enviar el comando UNREGISTER
                 command = f"UNREGISTER,{user}\0"
@@ -715,9 +721,11 @@ class client:
     # ******************** MAIN *********************
     @staticmethod
     def main(argv) :
+        
         if (not client.parseArguments(argv)) :
             client.usage()
             return
+
 
         #  Write code her
 
