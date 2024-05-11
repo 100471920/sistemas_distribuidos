@@ -8,6 +8,9 @@
 #include <arpa/inet.h>  // Para funciones de conversión de direcciones IP
 #include <errno.h>      // Para el manejo de errores
 #include <stdbool.h>
+#include "rpc_conexion.h"
+#include <rpc/rpc.h>
+
 //operaciones que se envian contra el servidor
 /*
 REGISTER        (UserName)
@@ -41,6 +44,7 @@ struct sockaddr_in client_addr;
 
 
 void REGISTER(int sc, char *token){
+    
     char resultado[2];
     strcpy(resultado, "0");
     registered++;
@@ -365,7 +369,10 @@ void GET_FILE(int sc, int objetivo){
     }
 }
 
+
 void tratar_mensaje(int  *socket) {
+    CLIENT *client;
+    client = clnt_create("localhost", OPERACIONES_PROG, OPERACIONES_VERS, "tcp");
     char client_ip[INET_ADDRSTRLEN]; // IP del cliente que manda el mensaje
     char resultado[2]; // Variable que almacena el resultado en caso de que este sea solo un número
     strcpy(resultado, "0");
@@ -396,17 +403,45 @@ void tratar_mensaje(int  *socket) {
         token = strtok(message, ",");
         printf("%s\ns> ", token);
 
+        struct usuario_operacion send_rpc;
+        send_rpc.operacion = NULL;
+        send_rpc.fecha = NULL;
+        send_rpc.usuario = NULL;
+        send_rpc.file_name = "";
+    
         if(strcmp(token, "REGISTER") == 0){
             // Se hace la operación register
-            int size;
+            printf("paso %s\ns> ", token);
+            send_rpc.operacion = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.operacion, token);
+
+            
             token = strtok(NULL, ",");
-            size = strlen(token);
+            printf("paso %s\ns> ", token);
+            send_rpc.fecha = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.fecha, token);
 
+            
+            token = strtok(NULL, ",");
+            printf("paso %s\ns> ", token);
+            send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.usuario, token);
+            printf("paso 5\n");
+
+            if (client != NULL) {
+                imprimir_operacion_usuario_1(&send_rpc, client);
+                printf("ha entrado XDDDDDDDD\n");
+            } else {
+                // Manejo del caso en el que los punteros son NULL
+                printf("Error: send_rpc o client son NULL\n");
+            }
+            printf("paso 6\n");
             pthread_mutex_lock(&mutex_shared_variables);
-
+            
+            
             for(int i = 0; i < registered; i++){
                 // Se busca si el usuario está registrado anteriormente
-                if (strcmp(token, users[i]) == 0){
+                if (strcmp(send_rpc.usuario, users[i]) == 0){
                     strcpy(resultado, "1");
                     if(send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                         pthread_mutex_unlock(&mutex_shared_variables);
@@ -416,18 +451,31 @@ void tratar_mensaje(int  *socket) {
             }
             if (strcmp(resultado, "0") == 0){
                 // Si no está registrado se le registra
-                REGISTER(sc, token);
+                REGISTER(sc, send_rpc.usuario);
             }
             pthread_mutex_unlock(&mutex_shared_variables);
 
         }
         else if (strcmp(token, "UNREGISTER") == 0){
+            send_rpc.operacion = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.operacion, token);
+
+            token = strtok(NULL, ",");
+            send_rpc.fecha = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.fecha, token);
+            
+            token = strtok(NULL, ",");
+            send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.usuario, token);
+
+            //imprimir_operacion_usuario_1(&send_rpc, client);
+
+
             pthread_mutex_lock(&mutex_shared_variables);
             if (registered > 0){
-                token = strtok(NULL, ",");
                 int index = -1;
                 for(int i = 0; i < registered;i++){
-                    if (strcmp(users[i], token) == 0){
+                    if (strcmp(users[i], send_rpc.usuario) == 0){
                         index = i;
                     }
                 }
@@ -473,7 +521,19 @@ void tratar_mensaje(int  *socket) {
             
         }
         else if (strcmp(token, "CONNECT") == 0){
+            send_rpc.operacion = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.operacion, token);
+
             token = strtok(NULL, ",");
+            send_rpc.fecha = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.fecha, token);
+            
+            token = strtok(NULL, ",");
+            send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.usuario, token);
+
+            //imprimir_operacion_usuario_1(&send_rpc, client);
+
             int index = -1;
 
             pthread_mutex_lock(&mutex_shared_variables);
@@ -508,9 +568,21 @@ void tratar_mensaje(int  *socket) {
             pthread_mutex_unlock(&mutex_shared_variables);
         }
         else if (strcmp(token, "DISCONNECT") == 0){
+            send_rpc.operacion = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.operacion, token);
+
+            token = strtok(NULL, ",");
+            send_rpc.fecha = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.fecha, token);
+            
+            token = strtok(NULL, ",");
+            send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.usuario, token);
+
+            //imprimir_operacion_usuario_1(&send_rpc, client);
+
             int conectado = -1;
             int registrado = -1;
-            token = strtok(NULL, ",");
 
             pthread_mutex_lock(&mutex_shared_variables);
 
@@ -554,8 +626,19 @@ void tratar_mensaje(int  *socket) {
             
         }
         else if (strcmp(token, "PUBLISH") == 0){
-            // Seleccionamos el usuario
+            send_rpc.operacion = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.operacion, token);
+
             token = strtok(NULL, ",");
+            send_rpc.fecha = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.fecha, token);
+            
+            token = strtok(NULL, ",");
+            send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.usuario, token);
+
+            //imprimir_operacion_usuario_1(&send_rpc, client);
+
             int registrado = -1;
 
             pthread_mutex_lock(&mutex_shared_variables);
@@ -605,12 +688,23 @@ void tratar_mensaje(int  *socket) {
             }
         }
         else if (strcmp(token, "DELETE") == 0){
+            send_rpc.operacion = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.operacion, token);
+
+            token = strtok(NULL, ",");
+            send_rpc.fecha = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.fecha, token);
+            
+            token = strtok(NULL, ",");
+            send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.usuario, token);
+
+            //imprimir_operacion_usuario_1(&send_rpc, client);
 
             pthread_mutex_lock(&mutex_shared_variables);
 
             if (num_files > 0){
                 // Seleccionamos el usuario
-                token = strtok(NULL, ",");
                 int registrado = -1;
                 for (int i = 0; i < registered;i++){
                     // Buscamos si el usuario está registrado
@@ -661,8 +755,19 @@ void tratar_mensaje(int  *socket) {
             }
         }
         else if (strcmp(token, "LIST_USERS") == 0){
-            // Seleccionamos el usuario
+            send_rpc.operacion = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.operacion, token);
+
             token = strtok(NULL, ",");
+            send_rpc.fecha = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.fecha, token);
+            
+            token = strtok(NULL, ",");
+            send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.usuario, token);
+
+            //imprimir_operacion_usuario_1(&send_rpc, client);
+
             int registrado = -1;
 
             pthread_mutex_lock(&mutex_shared_variables);
@@ -702,8 +807,19 @@ void tratar_mensaje(int  *socket) {
             pthread_mutex_unlock(&mutex_shared_variables);
         }
         else if (strcmp(token, "LIST_CONTENT") == 0){
-            // Seleccionamos el usuario
+            send_rpc.operacion = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.operacion, token);
+
             token = strtok(NULL, ",");
+            send_rpc.fecha = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.fecha, token);
+            
+            token = strtok(NULL, ",");
+            send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
+            strcpy(send_rpc.usuario, token);
+
+            //imprimir_operacion_usuario_1(&send_rpc, client);
+
             int registrado = -1;
             int registrado_2 = -1;
 
@@ -843,6 +959,9 @@ void tratar_mensaje(int  *socket) {
 
 int main(int argc, char *argv[]){
     printf("s> ");
+    if (argc != 2){
+        exit(-1);
+    }
     int puerto = atoi(argv[1]);
 
     pthread_attr_t t_attr;		// atributos de los threads

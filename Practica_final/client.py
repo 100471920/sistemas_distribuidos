@@ -44,9 +44,10 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                current_time = client._client_ws.service.get_current_time()
 
                 # Enviar el comando REGISTER
-                command = f"REGISTER,{user}\0"
+                command = f"REGISTER,{current_time},{user}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -79,12 +80,10 @@ class client:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
                 
-                # Se imprime fecha y hora (se deberia enviar) #################
                 current_time = client._client_ws.service.get_current_time()
-                print("Hora y fecha actual:", current_time)
 
                 # Enviar el comando UNREGISTER
-                command = f"UNREGISTER,{user}\0"
+                command = f"UNREGISTER,{current_time},{user}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -138,9 +137,10 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                current_time = client._client_ws.service.get_current_time()
 
                 # Enviar el comando CONNECT
-                command = f"CONNECT,{user},{client._server_socket.getsockname()[1]}\0"
+                command = f"CONNECT,{current_time},{user},{client._server_socket.getsockname()[1]}\0"
                 sock.sendall(command.encode())
                 
                 # Recibir la respuesta del servidor
@@ -176,9 +176,10 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                current_time = client._client_ws.service.get_current_time()
 
                 # Enviar el comando DISCONNECT
-                command = f"DISCONNECT,{user},{client._username}\0"
+                command = f"DISCONNECT,{current_time},{user},{client._username}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -232,10 +233,10 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
-                ##
+                current_time = client._client_ws.service.get_current_time()
 
                 # Enviar el comando PUBLISH
-                command = f"PUBLISH,{client._username},{fileName},{description}\0"
+                command = f"PUBLISH,{current_time},{client._username},{fileName},{description}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -285,9 +286,10 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                current_time = client._client_ws.service.get_current_time()
 
                 # Enviar el comando DELETE
-                command = f"DELETE,{client._username},{fileName}\0"
+                command = f"DELETE,{current_time},{client._username},{fileName}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -326,9 +328,10 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                current_time = client._client_ws.service.get_current_time()
 
                 # Enviar el comando LIST_USERS
-                command = f"LIST_USERS,{client._username}\0"
+                command = f"LIST_USERS,{current_time},{client._username}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -380,9 +383,10 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                current_time = client._client_ws.service.get_current_time()
 
                 # Enviar el comando LIST_CONTENT
-                command = f"LIST_CONTENT,{client._username},{user}\0"
+                command = f"LIST_CONTENT,{current_time},{client._username},{user}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
