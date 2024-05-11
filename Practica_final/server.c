@@ -80,7 +80,6 @@ void tratar_mensaje(int  *socket) {
                 // Se busca si el usuario está registrado anteriormente
                 if (strcmp(token, users[i]) == 0){
                     strcpy(resultado, "1");
-                    printf("User already exist\ns> ");
                     if(send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                         pthread_exit(0);
                     }
@@ -119,34 +118,54 @@ void tratar_mensaje(int  *socket) {
                         index = i;
                     }
                 }
+                int conectado = -1;
+                if(index !=-1){
+                    for (int i = 0; i < connected; i++){
+                        // Buscamos si el usuario está conectado
+                        if (strcmp(conexions[i], token) == 0){
+                            conectado = i;
+                        }
+                    }
+                }
+
                 if (index == -1){
-                
                     strcpy(resultado, "1");
                     if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                         pthread_exit(0);
                     }
                 }
-                free(users[index]);
-                for(int i = index; i < registered - 1; i++){
-                    users[i] = users[i + 1];
-                }
-                registered--;
-                if (registered != 0){
-                    users = realloc(users, registered * sizeof(char *));
-                }
-                if (users == NULL){
-                    strcpy(resultado, "2");
+
+                // Miramos si el usuario esta conectado para desconectartlo???
+                else if (conectado >= 0){
+                    strcpy(resultado, "3");
                     if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                         pthread_exit(0);
+                    }
+                }
+                else{
+                    free(users[index]);
+                    for(int i = index; i < registered - 1; i++){
+                        users[i] = users[i + 1];
+                    }
+                    registered--;
+                    if (registered != 0){
+                        users = realloc(users, registered * sizeof(char *));
+                    }
+                    if (users == NULL){
+                        strcpy(resultado, "2");
+                        if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                            pthread_exit(0);
+                        }
                     }
                 }
             }
             else{
                 strcpy(resultado, "1");
+                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                    pthread_exit(0);
+                }
             }
-            if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+            
             
         }
         else if (strcmp(token, "CONNECT") == 0){
@@ -245,6 +264,9 @@ void tratar_mensaje(int  *socket) {
                     conectado = i;
                 }
             }
+
+            token = strtok(NULL, ",");
+            
             if (registrado == -1){
                 // Si el usuario no está registrado
                 strcpy(resultado, "1");
@@ -252,6 +274,12 @@ void tratar_mensaje(int  *socket) {
             else if (conectado == -1){
                 // Si el usuario está conectado
                 strcpy(resultado, "2");
+            }
+            else if (token == NULL ){
+                strcpy(resultado, "4");
+            }
+            else if (strcmp(conexions[conectado], token) != 0){
+                strcpy(resultado, "4");
             }
             else{
                 // Desconectamos al usuario

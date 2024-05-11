@@ -53,7 +53,7 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if (response == "0\0"):
-                    client.reg_username = user
+                    client._reg_username = user
                     print("c> REGISTER OK")
                     return client.RC.OK
                 elif (response == "1\0"):
@@ -91,18 +91,26 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if (response == "0\0"):
-                    client.reg_username = None
+                    if (client._username == user):
+                        client._username = None
+                        client._connected = False
+                        client._thread.join()
+                        client._thread = None
+                    client._reg_username = None
                     print("c> UNREGISTER OK")
                     return client.RC.OK
                 elif (response == "1\0"):
                     print("c> USER DOES NOT EXIST")
+                    return client.RC.ERROR
+                elif (response == "3\0"):
+                    print("c> CAN NOT UNREGISTER CONNECTED USERS")
                     return client.RC.ERROR
                 else:
                     print("c> UNREGISTER FAIL")
                     return client.RC.USER_ERROR
 
         except Exception as e:
-            print("c> REGISTER FAIL")
+            print("c> REGISTER FAIL ")
             return client.RC.USER_ERROR
 
     
@@ -121,7 +129,7 @@ class client:
                 print("c> CONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
             elif (client._username == user):
-                print("c> CONNECT FAIL, USER ALREADY CONNECTED")
+                print("c> CONNECT FAIL, USER ALREADY CONNECTED mio")
                 return client.RC.USER_ERROR
             elif not (client._username is None):
                 print("c> CONNECT FAIL, ONE CONNECTED USER PER TERMINAL")
@@ -167,7 +175,7 @@ class client:
         #  Write your code here
         try:
             if (user is None):
-                print("c> DISCONNECT FAIL, USER DOES NOT EXIST")
+                print("c> DISCONNECT FAIL, USER DOES NOT EXIST yooooo")
                 return client.RC.USER_ERROR
 
             # Conectarse al servidor
@@ -175,7 +183,7 @@ class client:
                 sock.connect((client._server, client._port))
 
                 # Enviar el comando DISCONNECT
-                command = f"DISCONNECT,{user}\0"
+                command = f"DISCONNECT,{user},{client._username}\0"
                 sock.sendall(command.encode())
 
                 # Recibir la respuesta del servidor
@@ -190,10 +198,13 @@ class client:
                     print("c> DISCONNECT OK")
                     return client.RC.OK
                 elif (response == "1\0"):
-                    print("c> DISCONNECT FAIL / USER DOES NOT EXIST")
+                    print("c> DISCONNECT FAIL / USER DOES NOT EXIST respuesta server")
                     return client.RC.ERROR
                 elif (response == "2\0"):
                     print("c> DISCONNECT FAIL / USER NOT CONNECTED")
+                    return client.RC.ERROR
+                elif (response == "4\0"):
+                    print("c> DISCONNECT FAIL / CAN NOT DISCONNECT OTHER USERS")
                     return client.RC.ERROR
                 else:
                     print("c> DISCONNECT FAIL")
