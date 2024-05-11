@@ -40,6 +40,331 @@ int sd;
 struct sockaddr_in client_addr;
 
 
+void REGISTER(int sc, char *token){
+    char resultado[2];
+    strcpy(resultado, "0");
+    registered++;
+    char ** aux = realloc(users, registered * sizeof(char*));
+    if (aux == NULL) {
+        // Si falla la reserva de memoria se resetea
+        printf("Memory allocation failed\ns> ");
+        strcpy(resultado, "2");
+        registered--;
+        if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+            pthread_mutex_unlock(&mutex_shared_variables);
+            pthread_exit(0);
+        }
+    }
+    else{
+        users = aux;
+        users[registered - 1] = (char *) malloc((strlen(token) + 1) * sizeof(char));
+        strcpy(users[registered - 1], token);
+        if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+            pthread_mutex_unlock(&mutex_shared_variables);
+            pthread_exit(0);
+        }
+    }
+}
+
+void UNREGISTER(int sc, int to_delete){
+    char resultado[2];
+    free(users[to_delete]);
+    for(int i = to_delete; i < registered - 1; i++){
+        users[i] = users[i + 1];
+    }
+    registered--;
+    char **aux = NULL;
+    if (registered != 0){
+        aux = realloc(users, registered * sizeof(char *));
+    }
+    if (aux == NULL && registered > 0){
+        strcpy(resultado, "2");
+    }
+    else{
+        users = aux;
+        strcpy(resultado, "0");
+    }
+    if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+            pthread_mutex_unlock(&mutex_shared_variables);
+            pthread_exit(0);
+    }
+}
+
+void CONNECT(int sc, char* token, char client_ip[INET_ADDRSTRLEN]){
+    char resultado[2];
+    strcpy(resultado, "0");
+    connected++;
+    char**aux = realloc(conexions, connected * sizeof(char*));
+    if (aux == NULL){
+        strcpy(resultado, "3");
+        connected--;
+    }
+    else{
+        conexions = aux;
+        conexions[connected - 1] = (char*) malloc ((strlen(token) + 1) * sizeof(char));
+        if (conexions[connected - 1] == NULL){
+            strcpy(resultado, "3");
+        }
+        else{
+            strcpy(conexions[connected - 1], token);
+        }
+    }
+
+
+
+    aux = realloc(clients_ip, connected * sizeof(char *));
+    if (aux == NULL){
+        strcpy(resultado, "3");
+        connected--;
+        free(conexions[connected]);
+    }
+    else{
+        clients_ip = aux;
+        clients_ip[connected - 1] = (char *) malloc((strlen(client_ip) + 1) * sizeof(char));
+        if (clients_ip[connected - 1] == NULL){
+            strcpy(resultado, "3");
+        }
+        else{
+            strcpy(clients_ip[connected - 1], client_ip);
+        }
+    }
+
+
+    token = strtok(NULL, ",");
+    aux = realloc(client_socket, connected * sizeof(char *));
+    if (aux == NULL){
+        strcpy(resultado, "3");
+        connected--;
+        free(clients_ip[connected]);
+        free(conexions[connected]);
+    }
+    else{
+        client_socket = aux;
+        client_socket[connected - 1] = (char *) malloc((strlen(token) + 1) * sizeof(char));
+        if (client_socket[connected - 1] == NULL){
+            strcpy(resultado, "3");
+        }
+        else{
+            strcpy(client_socket[connected - 1], token);
+        }
+    }
+
+    if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+        pthread_mutex_unlock(&mutex_shared_variables);
+        pthread_exit(0);
+    }
+}
+
+void DISCONNECT(int to_delete, char*resultado){
+    // Desconectamos al usuario
+    free(conexions[to_delete]);
+    free(clients_ip[to_delete]);
+    free(client_socket[to_delete]);
+    for (int i = to_delete; i < connected -1; i++){
+        conexions[i] = conexions[i + 1];
+        clients_ip[i] = clients_ip[i + 1];
+        client_socket[i] = client_socket[i + 1];
+    }
+    char**aux_1;
+    char**aux_2;
+    char**aux_3;
+    connected--;
+    if (connected != 0){
+        aux_1 = realloc(conexions, connected * sizeof(char*));
+        aux_2= realloc(clients_ip, connected * sizeof(char*));
+        aux_3 = realloc(client_socket, connected * sizeof(char*));
+    }
+    if (aux_1 == NULL || aux_2 == NULL || aux_3 == NULL){
+        strcpy(resultado, "3");
+    }
+}
+
+void PUBLISH(char *token, char *resultado, int index_author){
+    // Hacemos espacio para los datos y los almacenamos
+    num_files++;
+    char ** aux = realloc(file_names, num_files * sizeof(char*));
+    if (aux == NULL){
+        // Error en asignacion de memoria
+        strcpy(resultado, "4");
+        num_files--;
+    }
+    else{
+        file_names = aux;
+        file_names[num_files - 1] = (char*) malloc ((strlen(token) + 1) * sizeof(char));
+        if (file_names[num_files - 1] == NULL){
+            // Error en asignacion de memoria
+            strcpy(resultado, "4");
+            num_files--;
+        }
+        else{
+            strcpy(file_names[num_files - 1], token);
+        }
+    }                
+    aux = realloc(authors, num_files * sizeof(char*));
+    if (aux == NULL){
+        // Error en asignacion de memoria
+        strcpy(resultado, "4");
+        free(file_names[num_files - 1]);
+        num_files--;
+    }
+    else{
+        authors = aux;
+        authors[num_files - 1] = (char*) malloc ((sizeof(conexions[index_author]) + 1) * sizeof(char));
+        if (authors[num_files - 1] == NULL){
+            // Error en asignacion de memoria
+            strcpy(resultado, "4");
+            free(file_names[num_files - 1]);
+            num_files--;
+        }
+        else{
+            strcpy(authors[num_files - 1], conexions[index_author]);
+        }
+    }
+    token = strtok(NULL, ",");
+
+    aux = realloc(descriptions, num_files * sizeof(char*));
+    if (aux == NULL){
+        // Error en asignacion de memoria
+        strcpy(resultado, "4");
+        free(file_names[num_files - 1]);
+        free(authors[num_files - 1]);
+        num_files--;
+    }
+    else{
+        descriptions = aux;
+        descriptions[num_files - 1] = (char*) malloc ((strlen(token) + 1) * sizeof(char));
+        if (descriptions[num_files - 1] == NULL){
+            // Error en asignacion de memoria
+            strcpy(resultado, "4");
+            free(file_names[num_files - 1]);
+            free(authors[num_files - 1]);
+            num_files--;
+        }
+        else{
+            strcpy(descriptions[num_files - 1], token);
+        }
+    }
+}
+
+void DELETE(int to_delete, char*resultado){
+    free(file_names[to_delete]);
+    free(descriptions[to_delete]);
+    for (int i = to_delete; i < num_files - 1; i++){
+        file_names[i] = file_names[i + 1];
+        descriptions[i] = descriptions[i + 1];
+    }
+    num_files--;
+    char ** aux = realloc(file_names, num_files * sizeof(char*));
+    if (aux == NULL){
+        strcpy(resultado, "4");
+        num_files++;
+    }
+    else{
+        file_names = aux;
+        aux = realloc(descriptions, num_files * sizeof(char*));
+        if (aux == NULL){
+            strcpy(resultado, "4");
+        }
+        else{
+            descriptions = aux;
+        }
+    }
+}
+
+void LIST_USERS(int sc){
+    char resultado[2];
+    strcpy(resultado, "0");
+    // Calculamos lo larga que va a ser nuestra cadena de texto
+    int total_size = strlen(resultado);
+    total_size++; // Deja espacio para una coma
+    for (int i = 0; i < connected; i++){
+        total_size += strlen(users[i]);
+        total_size++; // Deja espacio para una coma
+        total_size += strlen(clients_ip[i]);
+        total_size++; // Deja espacio para una coma
+        total_size += strlen(client_socket[i]);
+        total_size++; // \0 señalizando final y , en el resto
+    }
+    char to_send[total_size];
+    strcpy(to_send, "");
+    // Concatenamos el resultado final
+    strcat(to_send, "0,");
+    for (int i = 0; i < connected; i++){
+        strcat(to_send, users[i]);
+        strcat(to_send, ",");
+        strcat(to_send, clients_ip[i]);
+        strcat(to_send, ",");
+        strcat(to_send, client_socket[i]);
+        if (i != connected - 1){
+            strcat(to_send, ",");
+        } 
+    }
+    if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
+        pthread_mutex_unlock(&mutex_shared_variables);
+        pthread_exit(0);
+    }
+            
+}
+
+void LIST_CONTENT(int sc, char*token){
+    char resultado[2];
+    strcpy(resultado, "0");
+    // Calculamos lo larga que va a ser nuestra cadena de texto
+    int total_size = strlen(resultado);
+    total_size++; // Deja espacio para una coma
+    for (int i = 0; i < num_files; i++){
+        if (strcmp(token, authors[i]) == 0){
+            total_size += strlen(file_names[i]);
+            total_size++; // Deja espacio para una coma
+            total_size += strlen(descriptions[i]);
+            total_size++; // \0 señalizando final y , en el resto
+        }
+    }
+    char to_send[total_size];
+    strcpy(to_send, "");
+    // Concatenamos el resultado final
+    strcat(to_send, "0,");
+    for (int i = 0; i < num_files; i++){
+        if (strcmp(token, authors[i]) == 0){
+            strcat(to_send, file_names[i]);
+            strcat(to_send, ",");
+            strcat(to_send, descriptions[i]);
+            if (i != num_files - 1){
+                strcat(to_send, ",");
+            } 
+        }
+    }
+    if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
+        pthread_mutex_unlock(&mutex_shared_variables);
+        pthread_exit(0);
+    }
+}
+
+void GET_FILE(int sc, int objetivo){
+    char resultado[2];
+    strcpy(resultado, "0");
+    // Calculamos lo larga que va a ser nuestra cadena de texto
+    int total_size = strlen(resultado);
+    total_size++; // Deja espacio para una coma
+    total_size += strlen(clients_ip[objetivo]);
+    total_size++; // Deja espacio para una coma
+    total_size += strlen(client_socket[objetivo]);
+    total_size++; // \0 señalizando final
+    
+    char to_send[total_size];
+    strcpy(to_send, "");
+    // Concatenamos el resultado final
+    strcat(to_send, "0,");
+    strcat(to_send, clients_ip[objetivo]);
+    strcat(to_send, ",");
+    strcat(to_send, client_socket[objetivo]);
+    
+    if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
+        pthread_mutex_unlock(&mutex_shared_variables);
+        pthread_exit(0);
+    }
+}
+
 void tratar_mensaje(int  *socket) {
     char client_ip[INET_ADDRSTRLEN]; // IP del cliente que manda el mensaje
     char resultado[2]; // Variable que almacena el resultado en caso de que este sea solo un número
@@ -76,40 +401,28 @@ void tratar_mensaje(int  *socket) {
             int size;
             token = strtok(NULL, ",");
             size = strlen(token);
+
+            pthread_mutex_lock(&mutex_shared_variables);
+
             for(int i = 0; i < registered; i++){
                 // Se busca si el usuario está registrado anteriormente
                 if (strcmp(token, users[i]) == 0){
                     strcpy(resultado, "1");
                     if(send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                        pthread_mutex_unlock(&mutex_shared_variables);
                         pthread_exit(0);
                     }
                 }
             }
             if (strcmp(resultado, "0") == 0){
                 // Si no está registrado se le registra
-                registered++;
-                char ** aux = realloc(users, registered * sizeof(char*));
-                if (aux == NULL) {
-                    // Si falla la reserva de memoria se resetea
-                    printf("Memory allocation failed\ns> ");
-                    strcpy(resultado, "2");
-                    registered--;
-                    if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                        pthread_exit(0);
-                    }
-                }
-                else{
-                    users = aux;
-                    users[registered - 1] = (char *) malloc((strlen(token) + 1) * sizeof(char));
-                    strcpy(users[registered - 1], token);
-                    if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                        pthread_exit(0);
-                    }
-                }
+                REGISTER(sc, token);
             }
+            pthread_mutex_unlock(&mutex_shared_variables);
 
         }
         else if (strcmp(token, "UNREGISTER") == 0){
+            pthread_mutex_lock(&mutex_shared_variables);
             if (registered > 0){
                 token = strtok(NULL, ",");
                 int index = -1;
@@ -131,6 +444,7 @@ void tratar_mensaje(int  *socket) {
                 if (index == -1){
                     strcpy(resultado, "1");
                     if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                        pthread_mutex_unlock(&mutex_shared_variables);
                         pthread_exit(0);
                     }
                 }
@@ -139,38 +453,31 @@ void tratar_mensaje(int  *socket) {
                 else if (conectado >= 0){
                     strcpy(resultado, "3");
                     if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                        pthread_mutex_unlock(&mutex_shared_variables);
                         pthread_exit(0);
                     }
                 }
                 else{
-                    free(users[index]);
-                    for(int i = index; i < registered - 1; i++){
-                        users[i] = users[i + 1];
-                    }
-                    registered--;
-                    if (registered != 0){
-                        users = realloc(users, registered * sizeof(char *));
-                    }
-                    if (users == NULL){
-                        strcpy(resultado, "2");
-                        if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                            pthread_exit(0);
-                        }
-                    }
+                    UNREGISTER(sc, index);
                 }
             }
             else{
                 strcpy(resultado, "1");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                    pthread_mutex_unlock(&mutex_shared_variables);
                     pthread_exit(0);
                 }
             }
+            pthread_mutex_unlock(&mutex_shared_variables);
             
             
         }
         else if (strcmp(token, "CONNECT") == 0){
             token = strtok(NULL, ",");
             int index = -1;
+
+            pthread_mutex_lock(&mutex_shared_variables);
+
             for (int i = 0; i < registered; i ++){
                 if (strcmp(users[i], token) == 0){
                     index = i;
@@ -184,74 +491,29 @@ void tratar_mensaje(int  *socket) {
             if (index == -1){
                 strcpy(resultado, "1");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                    pthread_mutex_unlock(&mutex_shared_variables);
                     pthread_exit(0);
                 }
             }
             
             else if(strcmp(resultado, "2") == 0){
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                    pthread_mutex_unlock(&mutex_shared_variables);
                     pthread_exit(0);
                 }
             }
             else{
-                connected++;
-                conexions = realloc(conexions, connected * sizeof(char*));
-                if (conexions == NULL){
-                    strcpy(resultado, "3");
-                }
-                else{
-                    conexions[connected - 1] = (char*) malloc ((strlen(token) + 1) * sizeof(char));
-                    if (conexions[connected - 1] == NULL){
-                        strcpy(resultado, "3");
-                    }
-                    else{
-                        strcpy(conexions[connected - 1], token);
-                    }
-                }
-
-
-
-                clients_ip = realloc(clients_ip, connected * sizeof(char *));
-                if (clients_ip == NULL){
-                    strcpy(resultado, "3");
-                }
-                else{
-                    clients_ip[connected - 1] = (char *) malloc((strlen(client_ip) + 1) * sizeof(char));
-                    if (clients_ip[connected - 1] == NULL){
-                        strcpy(resultado, "3");
-                    }
-                    else{
-                        strcpy(clients_ip[connected - 1], client_ip);
-                    }
-                }
-
-
-                token = strtok(NULL, ",");
-                client_socket = realloc(client_socket, connected * sizeof(char *));
-                if (client_socket == NULL){
-                    strcpy(resultado, "3");
-                }
-                else{
-                    client_socket[connected - 1] = (char *) malloc((strlen(token) + 1) * sizeof(char));
-                    if (client_socket[connected - 1] == NULL){
-                        strcpy(resultado, "3");
-                    }
-                    else{
-                        strcpy(client_socket[connected - 1], token);
-                    }
-                }
-
-
-
-                if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                    pthread_exit(0);
-                }
+                CONNECT(sc, token, client_ip);
             }
+            pthread_mutex_unlock(&mutex_shared_variables);
         }
         else if (strcmp(token, "DISCONNECT") == 0){
             int conectado = -1;
             int registrado = -1;
             token = strtok(NULL, ",");
+
+            pthread_mutex_lock(&mutex_shared_variables);
+
             for(int i = 0; i < registered;i++){
                 // Buscamos si el usuario está registrado
                 if (strcmp(users[i], token) == 0){
@@ -282,34 +544,22 @@ void tratar_mensaje(int  *socket) {
                 strcpy(resultado, "4");
             }
             else{
-                // Desconectamos al usuario
-                free(conexions[conectado]);
-                free(clients_ip[conectado]);
-                free(client_socket[conectado]);
-                for (int i = conectado; i < connected -1; i++){
-                    conexions[i] = conexions[i + 1];
-                    clients_ip[i] = clients_ip[i + 1];
-                    client_socket[i] = client_socket[i + 1];
-                }
-                connected--;
-                if (connected != 0){
-                    conexions = realloc(conexions, connected * sizeof(char*));
-                    clients_ip = realloc(clients_ip, connected * sizeof(char*));
-                    client_socket = realloc(client_socket, connected * sizeof(char*));
-                }
-                if (conexions == NULL || clients_ip == NULL || client_socket == NULL){
-                    strcpy(resultado, "3");
-                }
+                DISCONNECT(conectado, resultado);
             }
             if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
+                    pthread_mutex_unlock(&mutex_shared_variables);
                     pthread_exit(0);
             }
+            pthread_mutex_unlock(&mutex_shared_variables);
             
         }
         else if (strcmp(token, "PUBLISH") == 0){
             // Seleccionamos el usuario
             token = strtok(NULL, ",");
             int registrado = -1;
+
+            pthread_mutex_lock(&mutex_shared_variables);
+
             for (int i = 0; i < registered;i++){
                 // Buscamos si el usuario está registrado
                 if (strcmp(users[i], token) == 0){
@@ -347,61 +597,17 @@ void tratar_mensaje(int  *socket) {
                 strcpy(resultado, "3");
             }
             else {
-                // Hacemos espacio para los datos y los almacenamos
-                num_files++;
-                file_names = realloc(file_names, num_files * sizeof(char*));
-                if (file_names == NULL){
-                    // Error en asignacion de memoria
-                    strcpy(resultado, "4");
-                }
-                else{
-                    file_names[num_files - 1] = (char*) malloc ((strlen(token) + 1) * sizeof(char));
-                    if (file_names[num_files - 1] == NULL){
-                        // Error en asignacion de memoria
-                        strcpy(resultado, "4");
-                    }
-                    else{
-                
-                 strcpy(file_names[num_files - 1], token);
-                    }
-                }                
-                authors = realloc(authors, num_files * sizeof(char*));
-                if (authors == NULL){
-                    // Error en asignacion de memoria
-                    strcpy(resultado, "4");
-                }
-                else{
-                    authors[num_files - 1] = (char*) malloc ((sizeof(conexions[conectado]) + 1) * sizeof(char));
-                    if (authors[num_files - 1] == NULL){
-                        // Error en asignacion de memoria
-                        strcpy(resultado, "4");
-                    }
-                    else{
-                        strcpy(authors[num_files - 1], conexions[conectado]);
-                    }
-                }
-                token = strtok(NULL, ",");
-                descriptions = realloc(descriptions, num_files * sizeof(char*));
-                if (descriptions == NULL){
-                    // Error en asignacion de memoria
-                    strcpy(resultado, "4");
-                }
-                else{
-                    descriptions[num_files - 1] = (char*) malloc ((strlen(token) + 1) * sizeof(char));
-                    if (descriptions[num_files - 1] == NULL){
-                        // Error en asignacion de memoria
-                        strcpy(resultado, "4");
-                    }
-                    else{
-                        strcpy(descriptions[num_files - 1], token);
-                    }
-                }
+                PUBLISH(token, resultado, conectado);
             }
+            pthread_mutex_unlock(&mutex_shared_variables);
             if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                 pthread_exit(0);
             }
         }
         else if (strcmp(token, "DELETE") == 0){
+
+            pthread_mutex_lock(&mutex_shared_variables);
+
             if (num_files > 0){
                 // Seleccionamos el usuario
                 token = strtok(NULL, ",");
@@ -442,28 +648,14 @@ void tratar_mensaje(int  *socket) {
                     // Error el archivo no está subido
                     strcpy(resultado, "3");
                 }
-                else {
-
-                    free(file_names[uploaded]);
-                    free(descriptions[uploaded]);
-                    for (int i = uploaded; i < num_files - 1; i++){
-                        file_names[i] = file_names[i + 1];
-                        descriptions[i] = descriptions[i + 1];
-                    }
-                    num_files--;
-                    file_names = realloc(file_names, num_files * sizeof(char*));
-                    if (file_names == NULL){
-                        strcpy(resultado, "4");
-                    }
-                    descriptions = realloc(descriptions, num_files * sizeof(char*));
-                    if (descriptions == NULL){
-                        strcpy(resultado, "4");
-                    }
+                else { 
+                    DELETE(uploaded, resultado);
                 }
             }
             else{
                 strcpy(resultado, "3");
             }
+            pthread_mutex_unlock(&mutex_shared_variables);
             if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                 pthread_exit(0);
             }
@@ -472,6 +664,9 @@ void tratar_mensaje(int  *socket) {
             // Seleccionamos el usuario
             token = strtok(NULL, ",");
             int registrado = -1;
+
+            pthread_mutex_lock(&mutex_shared_variables);
+
             for (int i = 0; i < registered;i++){
                 // Buscamos si el usuario está registrado
                 if (strcmp(users[i], token) == 0){
@@ -489,54 +684,31 @@ void tratar_mensaje(int  *socket) {
                 // Error no está registrado
                 strcpy(resultado, "1");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
             }
             }
             else if (conectado == -1){
                 // Error no está conectado
                 strcpy(resultado, "2");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
             }
             }
             else{
-                strcpy(resultado, "0");
-                // Calculamos lo larga que va a ser nuestra cadena de texto
-                int total_size = strlen(resultado);
-                total_size++; // Deja espacio para una coma
-                for (int i = 0; i < connected; i++){
-                    total_size += strlen(users[i]);
-                    total_size++; // Deja espacio para una coma
-                    total_size += strlen(clients_ip[i]);
-                    total_size++; // Deja espacio para una coma
-                    total_size += strlen(client_socket[i]);
-                    total_size++; // \0 señalizando final y , en el resto
-                }
-                char to_send[total_size];
-                strcpy(to_send, "");
-                // Concatenamos el resultado final
-                strcat(to_send, "0,");
-                for (int i = 0; i < connected; i++){
-                    strcat(to_send, users[i]);
-                    strcat(to_send, ",");
-                    strcat(to_send, clients_ip[i]);
-                    strcat(to_send, ",");
-                    strcat(to_send, client_socket[i]);
-                    if (i != connected - 1){
-                        strcat(to_send, ",");
-                        } 
-                }
-                if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
-                pthread_exit(0);
+                LIST_USERS(sc);
             }
-            }
-
+            pthread_mutex_unlock(&mutex_shared_variables);
         }
         else if (strcmp(token, "LIST_CONTENT") == 0){
             // Seleccionamos el usuario
             token = strtok(NULL, ",");
             int registrado = -1;
             int registrado_2 = -1;
+
+            pthread_mutex_lock(&mutex_shared_variables);
+
             for (int i = 0; i < registered;i++){
                 // Buscamos si el usuario está registrado
                 if (strcmp(users[i], token) == 0){
@@ -561,60 +733,40 @@ void tratar_mensaje(int  *socket) {
                 // Error no está registrado
                 strcpy(resultado, "1");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
+                }
             }
             else if (conectado == -1){
                 // Error no está conectado
                 strcpy(resultado, "2");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
+                }
             }
             else if (registrado_2 == -1){
                 // Error no está conectado
                 strcpy(resultado, "3");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
+                }
             }
             else{
-                strcpy(resultado, "0");
-                // Calculamos lo larga que va a ser nuestra cadena de texto
-                int total_size = strlen(resultado);
-                total_size++; // Deja espacio para una coma
-                for (int i = 0; i < num_files; i++){
-                    if (strcmp(token, authors[i]) == 0){
-                        total_size += strlen(file_names[i]);
-                        total_size++; // Deja espacio para una coma
-                        total_size += strlen(descriptions[i]);
-                        total_size++; // \0 señalizando final y , en el resto
-                    }
-                }
-                char to_send[total_size];
-                strcpy(to_send, "");
-                // Concatenamos el resultado final
-                strcat(to_send, "0,");
-                for (int i = 0; i < num_files; i++){
-                     if (strcmp(token, authors[i]) == 0){
-                    strcat(to_send, file_names[i]);
-                    strcat(to_send, ",");
-                    strcat(to_send, descriptions[i]);
-                    if (i != num_files - 1){
-                        strcat(to_send, ",");
-                        } 
-                    }
-                }
-                if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
-                pthread_exit(0);
+                LIST_CONTENT(sc, token);
             }
-            }
+            pthread_mutex_unlock(&mutex_shared_variables);
 
-        }else if (strcmp(token, "GET_FILE") == 0){
+        }
+        else if (strcmp(token, "GET_FILE") == 0){
             // Seleccionamos el usuario
             // Comprobaciones usuario principal
             token = strtok(NULL, ",");
             int registrado = -1;
+            
+            pthread_mutex_lock(&mutex_shared_variables);
+            
             for (int i = 0; i < registered;i++){
                 // Buscamos si el usuario está registrado
                 if (strcmp(users[i], token) == 0){
@@ -632,15 +784,17 @@ void tratar_mensaje(int  *socket) {
                 // Error no está registrado
                 strcpy(resultado, "1");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
+                }
             }
             else if (conectado == -1){
                 // Error no está conectado
                 strcpy(resultado, "4");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
+                }
             }
 
             // Comprobaciones usuario objetivo
@@ -663,38 +817,22 @@ void tratar_mensaje(int  *socket) {
                 // Error no está registrado
                 strcpy(resultado, "3");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
+                }
             }
             else if (conectado == -1){
                 // Error no está conectado
                 strcpy(resultado, "4");
                 if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
-                pthread_exit(0);
-            }
+                    pthread_mutex_unlock(&mutex_shared_variables);
+                    pthread_exit(0);
+                }
             }
             else{
-                strcpy(resultado, "0");
-                // Calculamos lo larga que va a ser nuestra cadena de texto
-                int total_size = strlen(resultado);
-                total_size++; // Deja espacio para una coma
-                total_size += strlen(clients_ip[conectado]);
-                total_size++; // Deja espacio para una coma
-                total_size += strlen(client_socket[conectado]);
-                total_size++; // \0 señalizando final
-                
-                char to_send[total_size];
-                strcpy(to_send, "");
-                // Concatenamos el resultado final
-                strcat(to_send, "0,");
-                strcat(to_send, clients_ip[conectado]);
-                strcat(to_send, ",");
-                strcat(to_send, client_socket[conectado]);
-                    
-                if (send(sc, (char*) to_send, strlen(to_send) + 1, 0) < 0) {
-                pthread_exit(0);
+                GET_FILE(sc, conectado);
             }
-            }
+            pthread_mutex_unlock(&mutex_shared_variables);
 
         }
     }

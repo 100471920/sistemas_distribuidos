@@ -38,8 +38,8 @@ class client:
     def  register(user):
         #  Write your code here
         try:
-            if (user is None):
-                print("c> REGISTER FAIL")
+            if (len(user) < 1 or user is None):
+                print("c> REGISTER FAIL ")
                 return client.RC.USER_ERROR
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -72,8 +72,8 @@ class client:
     def  unregister(user) :
         #  Write your code here
         try:
-            if (user is None):
-                print("c> USER DOES NOT EXIST")
+            if (len(user) < 1 or user is None):
+                print("c> USER DOES NOT EXIST ")
                 return client.RC.USER_ERROR
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -91,11 +91,6 @@ class client:
                 response = sock.recv(1024).decode().strip()
                 # Analizar la respuesta
                 if (response == "0\0"):
-                    if (client._username == user):
-                        client._username = None
-                        client._connected = False
-                        client._thread.join()
-                        client._thread = None
                     client._reg_username = None
                     print("c> UNREGISTER OK")
                     return client.RC.OK
@@ -125,7 +120,7 @@ class client:
 
         # 2 enviar cadena CONNECT, <user_name>, str<puerto>
         try:
-            if (user is None):
+            if (len(user) < 1 or user is None):
                 print("c> CONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
             elif (client._username == user):
@@ -174,7 +169,7 @@ class client:
     def disconnect(user) :
         #  Write your code here
         try:
-            if (user is None):
+            if (len(user) < 1 or user is None):
                 print("c> DISCONNECT FAIL, USER DOES NOT EXIST yooooo")
                 return client.RC.USER_ERROR
 
@@ -218,7 +213,7 @@ class client:
     def publish(fileName,  description) :
         #  Write your code here
         try:
-            if (fileName is None or description is None):
+            if (fileName is None or description is None or len(fileName) < 1 or len(description) < 1):
                 print("c> PUBLISH FAIL")
                 return client.RC.USER_ERROR
             elif (client._reg_username is None and client._username is None):
@@ -270,7 +265,7 @@ class client:
     def delete(fileName) :
         #  Write your code here
         try:
-            if (fileName is None):
+            if (fileName is None or len(fileName) < 1):
                 print("c> DELETE FAIL")
                 return client.RC.USER_ERROR
             elif (client._reg_username is None and client._username is None):
@@ -372,7 +367,7 @@ class client:
     def  listcontent(user) :
         #  Write your code here
         try:
-            if (user is None):
+            if (len(user) < 1 or user is None):
                 print("c> LIST_CONTENT FAIL")
                 return client.RC.USER_ERROR
             elif (client._reg_username is None and client._username is None):
@@ -439,7 +434,7 @@ class client:
     def  getfile(user,  remote_FileName,  local_FileName) :
         #  Write your code here
         try:      
-            if (user is None or remote_FileName is None or local_FileName is None):
+            if (user is None or remote_FileName is None or local_FileName is None or len(user) < 1 or len(remote_FileName) < 1 or len(local_FileName) < 1):
                 print("c> GET_FILE FAIL")
                 return client.RC.USER_ERROR  
             elif (client._reg_username is None and client._username is None):
