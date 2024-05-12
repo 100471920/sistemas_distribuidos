@@ -556,7 +556,6 @@ class client:
 
                # Conexión entrante desde {addr}
                 try:
-                    
                     script_directory = os.path.dirname(os.path.abspath(__file__))
                     local_file_directory = "Ficheros"
                     local_file_path = os.path.join(script_directory, local_file_directory)
@@ -582,38 +581,34 @@ class client:
                                         content = file.read(1024)
                                         
                                     client_socket.sendall(enviar)
-                                return client.RC.OK
+                                client_socket.close()
      
                             except Exception:
                                 # Enviar código 2 en caso de error durante la transferencia del archivo
                                 client_socket.sendall(b"2")
-                                return client.RC.USER_ERROR
+                                client_socket.close()
 
                         else:
                             # Enviar un mensaje de error al cliente, archivo no existe
                             client_socket.sendall(b"1")
-                            return client.RC.ERROR
+                            client_socket.close()
                     else:
                         # No se envio la operación GET_FILE
                         client_socket.sendall(b"2")
-                        return client.RC.ERROR
+                        client_socket.close()
                 
                 except Exception:
                     # Ocurrio algun problema con el otro cliente o las comunicaciones
                     continue
+            
                 
-
         except Exception:
-            #print("Error en attendpetitions:", str(e))
             # Cerrar el socket del cliente
             client_socket.close()
-            return client.RC.USER_ERROR
             
-        finally:
-            # Cerrar el socket del cliente
-            if (not client._connected):
-                server_socket.close()
-            return client.RC.USER_ERROR
+        # Cerrar el socket del cliente
+        if (not client._connected):
+            server_socket.close()
 
 
     # *
