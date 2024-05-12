@@ -424,11 +424,7 @@ void tratar_mensaje(int  *socket) {
             send_rpc.usuario = (char*) malloc((strlen(token) + 1) * sizeof(char));
             strcpy(send_rpc.usuario, token);
 
-            printf("paso 5\n");
-
             imprimir_operacion_usuario_1(&send_rpc, client);
-
-            printf("paso 6\n");
             
             pthread_mutex_lock(&mutex_shared_variables);
             
