@@ -170,7 +170,7 @@ class client:
         #  Write your code here
         try:
             if (len(user) < 1 or user is None):
-                print("c> DISCONNECT FAIL, USER DOES NOT EXIST yooooo")
+                print("c> DISCONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
 
             # Conectarse al servidor
@@ -194,7 +194,7 @@ class client:
                     print("c> DISCONNECT OK")
                     return client.RC.OK
                 elif (response == "1\0"):
-                    print("c> DISCONNECT FAIL / USER DOES NOT EXIST respuesta server")
+                    print("c> DISCONNECT FAIL / USER DOES NOT EXIST")
                     return client.RC.ERROR
                 elif (response == "2\0"):
                     print("c> DISCONNECT FAIL / USER NOT CONNECTED")
@@ -487,7 +487,7 @@ class client:
                             print("c> GET_FILE OK")
                             return client.RC.OK
                         elif (response[0]== "1"):
-                            print("GET_FILE FAIL / fILE NOT EXIST")
+                            print("GET_FILE FAIL / FILE NOT EXIST")
                             return client.RC.ERROR 
                         else:
                             print("c> GET_FILE FAIL")
