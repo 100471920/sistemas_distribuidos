@@ -123,7 +123,7 @@ class client:
                 print("c> CONNECT FAIL, USER DOES NOT EXIST")
                 return client.RC.USER_ERROR
             elif (client._username == user):
-                print("c> CONNECT FAIL, USER ALREADY CONNECTED mio")
+                print("c> CONNECT FAIL, USER ALREADY CONNECTED")
                 return client.RC.USER_ERROR
             elif not (client._username is None):
                 print("c> CONNECT FAIL, ONE CONNECTED USER PER TERMINAL")
@@ -513,9 +513,11 @@ class client:
             # Conectarse al servidor
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((client._server, client._port))
+                current_time = client._client_ws.service.get_current_time()
+
 
     
-                command = f"DISCONNECT,{client._username}\0"
+                command = f"DISCONNECT,{current_time},{client._username},{client._username}\0"
                 sock.sendall(command.encode())
 
                 response= sock.recv(1024).decode().strip()
