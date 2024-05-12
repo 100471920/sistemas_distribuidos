@@ -1,6 +1,6 @@
 # Compilador y opciones de compilación
 CC = gcc
-CFLAGS = -Wall -Wextra -g -I/usr/include/tirpc -I/usr/include/rpc
+CFLAGS = -Wall -g -I/usr/include/tirpc -I/usr/include/rpc
 
 # Bibliotecas adicionales
 LDLIBS += -lnsl -lpthread -ldl -ltirpc

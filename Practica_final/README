@@ -1,0 +1,13 @@
+# sistemas_distribuidos Pactica final
+
+1:python3 web-time-service.py
+
+2:make
+
+3:./rpc_server
+
+4:./server [PORT_SERVER]
+
+5:python3 client.py -s [IP_SERVER] -p [PORT_SERVER] 
+
+ 
