@@ -8,8 +8,6 @@
 bool_t
 xdr_usuario_operacion (XDR *xdrs, usuario_operacion *objp)
 {
-	register int32_t *buf;
-
 	 if (!xdr_string (xdrs, &objp->usuario, 256))
 		 return FALSE;
 	 if (!xdr_string (xdrs, &objp->operacion, 20))

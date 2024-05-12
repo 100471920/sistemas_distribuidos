@@ -28,7 +28,7 @@ typedef struct usuario_operacion usuario_operacion;
 #if defined(__STDC__) || defined(__cplusplus)
 #define imprimir_operacion_usuario 1
 extern  void * imprimir_operacion_usuario_1(usuario_operacion *, CLIENT *);
-extern  void * imprimir_operacion_usuario_1_svc(usuario_operacion *, struct svc_req *);
+extern  void * imprimir_operacion_usuario_1_svc(usuario_operacion *);
 extern int operaciones_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */

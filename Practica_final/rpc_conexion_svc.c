@@ -58,7 +58,7 @@ operaciones_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 }
 
 int
-main (int argc, char **argv)
+main ()
 {
 	register SVCXPRT *transp;
 
