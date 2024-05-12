@@ -439,12 +439,13 @@ void tratar_mensaje(int  *socket) {
             }
             if (strcmp(resultado, "0") == 0){
                 // Si no está registrado se le registra
-                REGISTER(sc, send_rpc.usuario);
                 printf("paso 5\n");
 
                 //imprimir_operacion_usuario_1(&send_rpc, client);
 
                 printf("paso 6\n");
+                REGISTER(sc, send_rpc.usuario);
+                
             }
             pthread_mutex_unlock(&mutex_shared_variables);
 
@@ -497,8 +498,8 @@ void tratar_mensaje(int  *socket) {
                     }
                 }
                 else{
-                    UNREGISTER(sc, index);
                     //imprimir_operacion_usuario_1(&send_rpc, client);
+                    UNREGISTER(sc, index);
                 }
             }
             else{
@@ -553,8 +554,8 @@ void tratar_mensaje(int  *socket) {
                 }
             }
             else{
-                CONNECT(sc, token, client_ip);
                 //imprimir_operacion_usuario_1(&send_rpc, client);
+                CONNECT(sc, token, client_ip);
             }
             pthread_mutex_unlock(&mutex_shared_variables);
         }
@@ -606,8 +607,8 @@ void tratar_mensaje(int  *socket) {
                 strcpy(resultado, "4");
             }
             else{
-                DISCONNECT(conectado, resultado);
                 //imprimir_operacion_usuario_1(&send_rpc, client);
+                DISCONNECT(conectado, resultado);
             }
             if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
                     pthread_mutex_unlock(&mutex_shared_variables);
@@ -672,8 +673,8 @@ void tratar_mensaje(int  *socket) {
                 strcpy(resultado, "3");
             }
             else {
-                PUBLISH(token, resultado, conectado);
                 //imprimir_operacion_usuario_1(&send_rpc, client);
+                PUBLISH(token, resultado, conectado);
             }
             pthread_mutex_unlock(&mutex_shared_variables);
             if (send(sc, (char*) resultado, strlen(resultado) + 1, 0) < 0) {
@@ -737,8 +738,8 @@ void tratar_mensaje(int  *socket) {
                     strcpy(resultado, "3");
                 }
                 else { 
-                    DELETE(uploaded, resultado);
                     //imprimir_operacion_usuario_1(&send_rpc, client);
+                    DELETE(uploaded, resultado);
                 }
             }
             else{
@@ -796,8 +797,8 @@ void tratar_mensaje(int  *socket) {
             }
             }
             else{
-                LIST_USERS(sc);
                 //imprimir_operacion_usuario_1(&send_rpc, client);
+                LIST_USERS(sc);
             }
             pthread_mutex_unlock(&mutex_shared_variables);
         }
@@ -864,8 +865,8 @@ void tratar_mensaje(int  *socket) {
                 }
             }
             else{
-                LIST_CONTENT(sc, token);
                 //imprimir_operacion_usuario_1(&send_rpc, client);
+                LIST_CONTENT(sc, token);
             }
             pthread_mutex_unlock(&mutex_shared_variables);
 
