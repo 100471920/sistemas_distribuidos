@@ -258,19 +258,21 @@ void DELETE(int to_delete, char*resultado){
         descriptions[i] = descriptions[i + 1];
     }
     num_files--;
-    char ** aux = realloc(file_names, num_files * sizeof(char*));
-    if (aux == NULL){
-        strcpy(resultado, "4");
-        num_files++;
-    }
-    else{
-        file_names = aux;
-        aux = realloc(descriptions, num_files * sizeof(char*));
+    if (num_files != 0){
+        char ** aux = realloc(file_names, num_files * sizeof(char*));
         if (aux == NULL){
             strcpy(resultado, "4");
+            num_files++;
         }
         else{
-            descriptions = aux;
+            file_names = aux;
+            aux = realloc(descriptions, num_files * sizeof(char*));
+            if (aux == NULL){
+                strcpy(resultado, "4");
+            }
+            else{
+                descriptions = aux;
+            }
         }
     }
 }
