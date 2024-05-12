@@ -349,7 +349,7 @@ class client:
                 if (parts[0] == "0"):
                     print("c> LIST_USERS OK")
                     for i in range(1, len(parts), 3):
-                        print(parts[i] + " " + parts[i+1] + " " + parts[i+2])
+                        print("\t"+parts[i] + " " + parts[i+1] + " " + parts[i+2])
                         
                     return client.RC.OK
                 elif (parts[0] == "1"):
